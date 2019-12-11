@@ -2,6 +2,7 @@
 #define DBPIT_XP_PARAMS_H
 
 #include <cstdint>
+#include <string>
 
 struct ExperimentParams {
 
@@ -10,6 +11,7 @@ struct ExperimentParams {
     uint16_t m = 512; // sequence length
     uint16_t d = 1024; // no of sequences
     uint16_t k = 32; // max hamming length
+    std::string solverID = "nb";
 
     // extra params
 
@@ -25,6 +27,5 @@ struct ExperimentParams {
     bool isDisabledBitsPerPacked() { return bits_per_packed == DISABLE_BITS_PER_PACKED; }
 
 };
-
 
 #endif //DBPIT_XP_PARAMS_H

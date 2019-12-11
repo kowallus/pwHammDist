@@ -1,13 +1,14 @@
 #include "../utils/helper.h"
 #include "../utils/testdata.h"
 #include "cli.h"
+#include "../SolverFactory.h"
 
 using namespace std;
 
 fstream fout("dbpit_res.txt", ios::out | ios::binary | ios::app);
 
 template<typename t_packed>
-void benchmark(BenchmarkParams &bParams, ExperimentParams &xParams) {
+void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
     if (bParams.verbose) cout << "Generation of data..." << std::endl;
     uint16_t noOfPacked = ((xParams.m - 1) / xParams.bits_per_packed) + 1;
     t_packed* dataArray = new t_packed[xParams.d * noOfPacked];
@@ -25,7 +26,7 @@ void benchmark(BenchmarkParams &bParams, ExperimentParams &xParams) {
     for(int i = 0; i < bParams.repeats; i++) {
         cleanCache();
         time_checkpoint();
-//        brute += dbpi_trasposed(values, m, d, k, bits_packed);
+        brute += solver->findSimilarSequences((t_packed*) data).size();
         times.push_back(time_millis());
     }
     std::sort(times.begin(), times.end());
@@ -54,7 +55,11 @@ int main(int argc, char *argv[]) {
 
     parseArgs(argc, argv, bParams, xParams);
 
-    benchmark<uint16_t>(bParams, xParams);
+    DBPISolver* solver = getSolverInstance(xParams);
+
+    benchmark<uint16_t>(solver, bParams, xParams);
+
+    delete(solver);
 
     return 0;
 }

@@ -19,4 +19,8 @@ set(PARAMS_FILES xp-params.h bench/cli.cpp bench/cli.h bench/params.h)
 set(HELPER_FILES
         utils/byteswap.h utils/helper.cpp utils/helper.h utils/testdata.h)
 
-add_executable(bench-dbpit bench/bench-dbpit.cpp ${HELPER_FILES} ${PARAMS_FILES})
+set(DBPIT_FILES
+        ${HELPER_FILES} ${PARAMS_FILES}
+        dbpi.h SolverFactory.cpp SolverFactory.h)
+
+add_executable(bench-dbpi bench/bench-dbpi.cpp ${DBPIT_FILES} )
