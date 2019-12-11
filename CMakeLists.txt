@@ -14,7 +14,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(PARAMS_FILES )
+set(PARAMS_FILES xp-params.h bench/cli.cpp bench/cli.h bench/params.h)
 
 set(HELPER_FILES
         utils/byteswap.h utils/helper.cpp utils/helper.h utils/testdata.h)
