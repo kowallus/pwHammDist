@@ -11,7 +11,7 @@ using namespace std;
 template<typename t_packed>
 void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
     if (bParams.verbose) cout << "Generation of data..." << std::endl;
-    uint16_t noOfPacked = ((xParams.m - 1) / xParams.bits_per_packed) + 1;
+    uint16_t noOfPacked = ceilDivisionBySmallInteger(xParams.m, xParams.bits_per_packed);
     t_packed* dataArray = new t_packed[xParams.d * noOfPacked];
     t_packed (&data)[noOfPacked] = reinterpret_cast<t_packed (&)[noOfPacked]>(*dataArray);
     getRandomValues((t_packed*) data, xParams.m, xParams.d, xParams.bits_per_packed, xParams.ones_in_promiles);

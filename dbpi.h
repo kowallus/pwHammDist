@@ -28,7 +28,7 @@ private:
     template<typename t_packed>
     vector<pair<uint16_t, uint16_t>> solve(t_packed *sequences) {
         vector<pair<uint16_t, uint16_t>> res;
-        uint16_t seqInBytes = (((xParams.m - 1) / xParams.bits_per_packed) + 1) * sizeof(t_packed);
+        uint16_t seqInBytes = ceilDivisionBySmallInteger(xParams.m, xParams.bits_per_packed) * sizeof(t_packed);
         uint16_t seqInULLs = seqInBytes / 8;
         assert(seqInBytes == seqInULLs * 8);
         uint64_t *x = (uint64_t*) sequences;

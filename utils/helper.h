@@ -56,6 +56,17 @@ inline uint divideBySmallInteger(const uint dividend, const unsigned char diviso
         case 6: return dividend / 6;
         case 7: return dividend / 7;
         case 8: return dividend / 8;
+        case 9: return dividend / 9;
+        case 10: return dividend / 10;
+        case 11: return dividend / 11;
+        case 12: return dividend / 12;
+        case 13: return dividend / 13;
+        case 14: return dividend / 14;
+        case 15: return dividend / 15;
+        case 16: return dividend / 16;
+        case 32: return dividend / 32;
+        case 64: return dividend / 64;
+        case 128: return dividend / 128;
     };
     cout << "Unsupported denominator " << divisor << "!\n";
     return 0;
@@ -88,6 +99,11 @@ inline uint moduloBySmallInteger(const uint dividend, const unsigned char diviso
     return moduloBySmallInteger(dividend, divisor, divideBySmallInteger(dividend, divisor));
 }
 
+template<typename uint>
+inline uint ceilDivisionBySmallInteger(const uint dividend, const uint8_t divisor) {
+    return divideBySmallInteger(dividend - 1,  divisor) + 1;
+}
+
 template<typename t_val>
 string transpose(string matrix, uint64_t rows, uint64_t cols) {
     string tRes;
@@ -100,6 +116,8 @@ string transpose(string matrix, uint64_t rows, uint64_t cols) {
     }
     return tRes;
 }
+
+
 
 // binary sequence comparison routines
 
