@@ -3,24 +3,31 @@
 
 #include <vector>
 #include <random>
+#include "helper.h"
+#include "../xp-params.h"
 
 using namespace std;
 
 std::mt19937 randgenerator;
 
-template<typename t_packed>
-void getRandomValues(t_packed* data, uint16_t m, uint16_t d, uint8_t bits_packed, uint16_t ones_in_promiles) {
+void getRandomValues(uint8_t* data, ExperimentParams& xParams) {
     randgenerator.seed(randgenerator.default_seed);
-    uint16_t noOfPacked = ((m - 1) / bits_packed) + 1;
-    t_packed* cur = data;
+    uint16_t m = xParams.m;
+    uint16_t d = xParams.d;
+    uint8_t bitsPerPacked = xParams.bitsPerPacked;
+    uint16_t bytesPerSeq = xParams.bytesPerSequence;
+    uint16_t onesInPromiles = xParams.onesInPromiles;
+    uint8_t* cur;
     for(uint16_t i = 0; i < d; i++) {
-        for (uint16_t j = 0; j < noOfPacked; j++) {
-            *cur = 0;
-            for (uint8_t b = 0; b < bits_packed; b++) {
-                if (randgenerator() % 1000 < ones_in_promiles)
-                    *cur += 1 << b;
-            }
-            cur++;
+        cur = (data + i * bytesPerSeq) - 1;
+        uint8_t b = 0;
+        for (uint16_t j = 0; j < m; j++) {
+            if (b % 8 == 0)
+                *(++cur) = 0;
+            if (randgenerator() % 1000 < onesInPromiles)
+                *cur += 1 << (b % 8);
+            if (++b == bitsPerPacked)
+                b = 0;
         }
     }
 }

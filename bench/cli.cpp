@@ -12,7 +12,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
             case 'b':
-                xParams.bits_per_packed = atoi(optarg);
+                xParams.bitsPerPacked = atoi(optarg);
                 break;
             case 'a':
                 xParams.solverID = std::string(optarg);
@@ -35,7 +35,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             default: /* '?' */
                 fprintf(stderr, "Usage: %s [-a algorithmID] [-r noOfRepeats] [-v] [-q] ", argv[0]);
                 if (!xParams.isDisabledOnesInPromiles())
-                    fprintf(stderr, "ones_in_promiles ");
+                    fprintf(stderr, "onesInPromiles ");
                 fprintf(stderr, "m d k\n\n");
                 fprintf(stderr, "algorithm ID : algorithm name\n");
                 for(pair<string, SolverFactory*> p: dbpi_solver_types_map) {
@@ -56,7 +56,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     }
 
     if (!xParams.isDisabledOnesInPromiles())
-        xParams.ones_in_promiles = atoi(argv[optind++]);
+        xParams.onesInPromiles = atoi(argv[optind++]);
     xParams.m = atoi(argv[optind++]);
     xParams.d = atoi(argv[optind++]);
     xParams.k = atoi(argv[optind++]);

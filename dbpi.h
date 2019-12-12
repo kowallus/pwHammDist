@@ -14,23 +14,19 @@ protected:
     DBPISolver(ExperimentParams &xParams): xParams(xParams) {};
 
 public:
-
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) = 0;
-    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint16_t* sequences) = 0;
 
 };
 
 template <bool naive>
 class Brute_DBPI_Solver : public DBPISolver {
+public:
+    Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams) {};
 
-private:
-
-    template<typename t_packed>
-    vector<pair<uint16_t, uint16_t>> solve(t_packed *sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
         vector<pair<uint16_t, uint16_t>> res;
-        uint16_t seqInBytes = ceilDivisionBySmallInteger(xParams.m, xParams.bits_per_packed) * sizeof(t_packed);
-        uint16_t seqInULLs = seqInBytes / 8;
-        assert(seqInBytes == seqInULLs * 8);
+        uint16_t seqInULLs = xParams.bytesPerSequence / 8;
+        assert(xParams.bytesPerSequence == seqInULLs * 8);
         uint64_t *x = (uint64_t*) sequences;
         for(int i = 0; i < xParams.d - 1; i++) {
             uint64_t *y = x + seqInULLs;
@@ -50,11 +46,6 @@ private:
         return res;
     };
 
-public:
-    Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams) {};
-
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) { return solve(sequences); };
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint16_t* sequences){ return solve(sequences); };
 
 };
 
