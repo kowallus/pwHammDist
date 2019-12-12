@@ -11,11 +11,11 @@ struct ExperimentParams {
     uint16_t m = 512; // sequence length
     uint16_t d = 1024; // no of sequences
     uint16_t k = 32; // max hamming length
-    std::string solverID = "nb";
+    std::string solverID = "nbf";
 
     // extra params
 
-    uint8_t bits_per_packed = 12; //bits in packed value
+    uint8_t bits_per_packed = 16; //bits in packed value
     uint16_t ones_in_promiles = 900; // density of 1 bits in sequences (in promiles)
 
     const uint8_t DISABLE_BITS_PER_PACKED = UINT8_MAX;

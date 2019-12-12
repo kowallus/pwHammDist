@@ -11,18 +11,19 @@ DBPISolver* getSolverInstance(ExperimentParams& xParams) {
 }
 
 
+template<bool naive>
 class NaiveBruteSolverFactory: public SolverFactory {
 public:
-    NaiveBruteSolverFactory():SolverFactory("naive brute-force") {};
+    NaiveBruteSolverFactory():SolverFactory(string(naive?"naive ":"") + string("brute-force")) {};
 
     DBPISolver* getSolverInstance(ExperimentParams& xParams) {
-        return new Brute_DBPI_Solver(xParams);
+        return new Brute_DBPI_Solver<naive>(xParams);
     }
 };
 
 map<string, SolverFactory*> dbpi_solver_types_map =
-        {{"nb", new NaiveBruteSolverFactory()}
-//         {"br", "brute-force"},
+        {{"nbf", new NaiveBruteSolverFactory<true>()},
+         {"sbf", new NaiveBruteSolverFactory<false>()}
 //         {"dt", "dbpit-transpone"}
          };
 

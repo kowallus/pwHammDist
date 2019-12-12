@@ -7,12 +7,15 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     int opt; // current option
 
-    std::string paramsStr = std::string(xParams.isDisabledBitsPerPacked()?"":"b:") + std::string("r:vq?");
+    std::string paramsStr = std::string(xParams.isDisabledBitsPerPacked()?"":"b:") + std::string("r:a:vq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
             case 'b':
                 xParams.bits_per_packed = atoi(optarg);
+                break;
+            case 'a':
+                xParams.solverID = std::string(optarg);
                 break;
             case 'q':
                 bParams.verbose = false;
@@ -30,10 +33,11 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-r noOfRepeats] [-v] [-q] ", argv[0]);
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-r noOfRepeats] [-v] [-q] ", argv[0]);
                 if (!xParams.isDisabledOnesInPromiles())
                     fprintf(stderr, "ones_in_promiles ");
                 fprintf(stderr, "m d k\n\n");
+                fprintf(stderr, "-a algorithmIDs: nbf, sbf\n");
                 fprintf(stderr, "\n-v verify results (extremely slow)\n-q quiet output (only parameters)\n\n");
                 exit(EXIT_FAILURE);
         }

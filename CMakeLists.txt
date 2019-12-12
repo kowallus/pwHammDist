@@ -24,3 +24,8 @@ set(DBPIT_FILES
         dbpi.h SolverFactory.cpp SolverFactory.h)
 
 add_executable(bench-dbpi bench/bench-dbpi.cpp ${DBPIT_FILES} )
+add_executable(bench-dbpi-win bench/bench-dbpi.cpp ${DBPIT_FILES})
+if((CYGWIN OR MINGW) AND ${CMAKE_BUILD_TYPE} MATCHES "Release")
+    message("Windows static build: ${CMAKE_SYSTEM} ${CMAKE_SYSTEM_NAME}")
+    target_link_libraries(bench-dbpi-win -static -static-libgcc -static-libstdc++)
+endif()

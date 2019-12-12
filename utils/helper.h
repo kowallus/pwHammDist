@@ -13,6 +13,7 @@
 #include <climits>
 #include <cmath>
 #include <sstream>
+#include "nmmintrin.h"
 
 using namespace std;
 
@@ -98,6 +99,78 @@ string transpose(string matrix, uint64_t rows, uint64_t cols) {
             tMatrix[m * rows + i] = nMatrix[i * cols + m];
     }
     return tRes;
+}
+
+// binary sequence comparison routines
+
+// Count number of bits between two arrays that are different (same positions)
+// Operation POPCNT is used (available for modern CPUs)
+template <typename T>
+inline uint64_t bit_cost(const T &x, const T &y, int max_i)
+{
+    uint64_t r = 0;
+
+    switch (max_i % 4)
+    {
+        case 3:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+        case 2:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+        case 1:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+    }
+
+    for (int i = max_i - 1; i >= 0;)
+    {
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+    }
+
+    return r;
+}
+
+template <typename T>
+inline uint64_t bit_cost(const T &x, const T &y, int max_i, int limit)
+{
+    uint64_t r = 0;
+
+    switch (max_i % 4)
+    {
+        case 3:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+        case 2:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+        case 1:
+            --max_i;
+            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+    }
+
+    for (int i = max_i - 1; i >= 0;)
+    {
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        r += __builtin_popcountll(x[i] ^ y[i]);
+        --i;
+        if (r > limit)
+            return r;
+    }
+
+    return r;
 }
 
 // string comparison routines
