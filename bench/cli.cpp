@@ -37,7 +37,10 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 if (!xParams.isDisabledOnesInPromiles())
                     fprintf(stderr, "ones_in_promiles ");
                 fprintf(stderr, "m d k\n\n");
-                fprintf(stderr, "-a algorithmIDs: nbf, sbf\n");
+                fprintf(stderr, "algorithm ID : algorithm name\n");
+                for(pair<string, SolverFactory*> p: dbpi_solver_types_map) {
+                    fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getSolverName().c_str());
+                }
                 fprintf(stderr, "\n-v verify results (extremely slow)\n-q quiet output (only parameters)\n\n");
                 exit(EXIT_FAILURE);
         }

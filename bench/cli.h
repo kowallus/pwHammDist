@@ -3,6 +3,7 @@
 
 #include "params.h"
 #include "../xp-params.h"
+#include "../SolverFactory.h"
 
 void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParams &xParams);
 

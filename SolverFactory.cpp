@@ -14,7 +14,7 @@ DBPISolver* getSolverInstance(ExperimentParams& xParams) {
 template<bool naive>
 class NaiveBruteSolverFactory: public SolverFactory {
 public:
-    NaiveBruteSolverFactory():SolverFactory(string(naive?"naive ":"") + string("brute-force")) {};
+    NaiveBruteSolverFactory():SolverFactory(string(naive?"naive ":"short-circuit ") + string("brute-force")) {};
 
     DBPISolver* getSolverInstance(ExperimentParams& xParams) {
         return new Brute_DBPI_Solver<naive>(xParams);

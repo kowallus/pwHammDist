@@ -3,9 +3,10 @@
 #include "cli.h"
 #include "../SolverFactory.h"
 
-using namespace std;
+void logResults(ostream &outStream, const BenchmarkParams &bParams, const ExperimentParams &xParams,
+                const vector<double> &times);
 
-fstream fout("dbpit_res.txt", ios::out | ios::binary | ios::app);
+using namespace std;
 
 template<typename t_packed>
 void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
@@ -30,21 +31,34 @@ void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &x
         times.push_back(time_millis());
     }
     std::sort(times.begin(), times.end());
-    double maxTime = times[bParams.repeats - 1];
-    double medianTime = times[times.size()/2];
-    double minTime = times[0];
-    if (bParams.verbose) cout << std::endl << "total time [ms]; m; d; k; ones [%]; bits_packed; max/min time [ms]" << std::endl;
-    cout << medianTime << "\t" << xParams.m << "\t" << xParams.d << "\t" << xParams.k << "\t"
-            << xParams.ones_in_promiles << "\t" << (int) xParams.bits_per_packed
-            << "\t" << maxTime << "\t" << minTime << "\t" << std::endl;
-    fout << medianTime << "\t" << xParams.m << "\t" << xParams.d << "\t" << xParams.k << "\t"
-            << xParams.ones_in_promiles << "\t" << (int) xParams.bits_per_packed
-            << "\t" << maxTime << "\t" << minTime << "\t" << std::endl;
+    ofstream fout("dbpit_res.txt", ios::out | ios::binary | ios::app);
+
+    logResults(fout, bParams, xParams, times);
+    if (bParams.verbose) {
+        cout << std::endl << "total time [ms]; algID; m; d; k; ones [%]; bits_packed";
+        if (bParams.repeats > 1)
+            cout << "; repeats; max/min time [ms]";
+        cout <<  std::endl;
+    }
+    logResults(cout, bParams, xParams, times);
+
     cout << brute << std::endl;
     if (bParams.verification) cout << "Veryfication uninmplemented :(";
 
     delete(dataArray);
     if (bParams.verbose) cout << "The end..." << std::endl;
+}
+
+void logResults(ostream& outStream, const BenchmarkParams &bParams, const ExperimentParams &xParams,
+                const vector<double> &times) {
+    double maxTime = times[bParams.repeats - 1];
+    double medianTime = times[times.size()/2];
+    double minTime = times[0];
+    outStream << medianTime << "\t" << xParams.solverID << "\t" << xParams.m << "\t" << xParams.d << "\t" << xParams.k << "\t"
+         << xParams.ones_in_promiles << "\t" << (int) xParams.bits_per_packed;
+    if (bParams.repeats > 1)
+        outStream << "\t" << bParams.repeats << "\t" << maxTime << "\t" << minTime << "\t";
+    outStream << endl;
 }
 
 
