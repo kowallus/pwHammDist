@@ -18,7 +18,7 @@ void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &x
     uint8_t* sequences = new uint8_t[xParams.d * xParams.bytesPerSequence]();
     getRandomValues(sequences, xParams);
 
-    if (bParams.verbose) cout << "Solving... ";
+    if (bParams.verbose) cout << "Solving... " << endl;
 
     vector<double> times;
     int brute = 0;

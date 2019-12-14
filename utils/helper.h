@@ -121,74 +121,62 @@ string transpose(string matrix, uint64_t rows, uint64_t cols) {
 
 // binary sequence comparison routines
 
-// Count number of bits between two arrays that are different (same positions)
-// Operation POPCNT is used (available for modern CPUs)
-template <typename T>
-inline uint64_t bit_cost(const T &x, const T &y, int max_i)
-{
-    uint64_t r = 0;
-
-    switch (max_i % 4)
-    {
-        case 3:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
-        case 2:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
-        case 1:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
-    }
-
-    for (int i = max_i - 1; i >= 0;)
-    {
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-    }
-
-    return r;
+inline uint64_t hammingDistance(const uint8_t* x, const uint8_t* y, int length) {
+    uint64_t res = 0;
+    for (int i = 0; i < length; i++)
+        if (x[i] != y[i])
+            res++;
+    return res;
 }
 
-template <typename T>
-inline uint64_t bit_cost(const T &x, const T &y, int max_i, int limit)
+inline uint64_t hammingDistance(const uint8_t* x, const uint8_t* y, int length, const int limit) {
+    uint64_t res = 0;
+
+    int i = 0;
+    while(i < length) {
+        int end = i + 64;
+        if (end > length)
+            end = length;
+        do {
+            if (x[i] != y[i])
+                res++;
+        } while (++i < end);
+        if (res > limit)
+            return res;
+    }
+
+    return res;
+}
+
+inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length)
 {
-    uint64_t r = 0;
+    uint64_t res = 0;
 
-    switch (max_i % 4)
-    {
-        case 3:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
-        case 2:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
-        case 1:
-            --max_i;
-            r += __builtin_popcountll(x[max_i] ^ y[max_i]);
+    for (int i = 0; i < length; i++)
+        res += __builtin_popcountll(x[i] ^ y[i]);
+
+    return res;
+}
+
+inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length, int limit)
+{
+    uint64_t res = 0;
+
+    uint64_t lenIgnoreLimit = limit / 32;
+    if (lenIgnoreLimit > length)
+        lenIgnoreLimit = length;
+
+    int i = 0;
+    for (; i < lenIgnoreLimit; i++)
+        res += __builtin_popcountll(x[i] ^ y[i]);
+
+    for (; i < length; i++) {
+        res += __builtin_popcountll(x[i] ^ y[i]);
+        if (res > limit)
+            return res;
     }
 
-    for (int i = max_i - 1; i >= 0;)
-    {
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        r += __builtin_popcountll(x[i] ^ y[i]);
-        --i;
-        if (r > limit)
-            return r;
-    }
-
-    return r;
+    return res;
 }
 
 // string comparison routines

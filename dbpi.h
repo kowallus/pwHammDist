@@ -18,7 +18,7 @@ public:
 
 };
 
-template <bool naive>
+template <bool naive, bool binaryAlphabet>
 class Brute_DBPI_Solver : public DBPISolver {
 public:
     Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams) {};
@@ -32,10 +32,12 @@ public:
             uint64_t *y = x + seqInULLs;
             for (int j = i + 1; j < xParams.d; j++) {
                 uint64_t dist;
-                if (naive)
-                    dist = bit_cost(x, y, seqInULLs);
+                if (binaryAlphabet)
+                    dist = naive? hammingDistanceBinary(x, y, seqInULLs): hammingDistanceBinary(x, y, seqInULLs,
+                                                                                                xParams.k);
                 else
-                    dist = bit_cost(x, y, seqInULLs, xParams.k);
+                    dist = naive?hammingDistance((uint8_t*) x, (uint8_t*) y, xParams.bytesPerSequence):
+                           hammingDistance((uint8_t*) x, (uint8_t*) y, xParams.bytesPerSequence, xParams.k);
                 if (dist <= xParams.k) {
                     res.push_back(pair<uint16_t, uint16_t>(i, j));
                 }
