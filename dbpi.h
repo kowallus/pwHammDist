@@ -8,6 +8,10 @@
 
 using namespace std;
 
+const string NAIVE_BRUTE_FORCE_ID = "nbf";
+const string SHORT_CIRCUIT_BRUTE_FORCE_ID = "sbf";
+const string BINARY_MODE_ID_SUFFIX = "_bin";
+
 class DBPISolver {
 protected:
     ExperimentParams &xParams;
@@ -15,7 +19,7 @@ protected:
 
 public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) = 0;
-
+    virtual string getName() = 0;
 };
 
 template <bool naive, bool binaryAlphabet>
@@ -48,6 +52,7 @@ public:
         return res;
     };
 
+    string getName() { return (naive?NAIVE_BRUTE_FORCE_ID:SHORT_CIRCUIT_BRUTE_FORCE_ID) + (binaryAlphabet?BINARY_MODE_ID_SUFFIX:""); };
 
 };
 

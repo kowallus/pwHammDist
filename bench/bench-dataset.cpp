@@ -13,7 +13,7 @@ using namespace std;
 void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
     if (bParams.verbose) cout << "Generation of data..." << std::endl;
     xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.m, xParams.bitsPerPacked)
-            * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
+                               * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
     xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
     uint8_t* sequences = new uint8_t[xParams.d * xParams.bytesPerSequence]();
     getRandomValues(sequences, xParams);
@@ -57,7 +57,7 @@ void resultsToStream(ostream &outStream, const BenchmarkParams &bParams, const E
     double medianTime = times[times.size()/2];
     double minTime = times[0];
     outStream << medianTime << "\t" << xParams.solverID << "\t" << xParams.m << "\t" << xParams.d << "\t" << xParams.k << "\t"
-         << xParams.onesInPromiles << "\t" << (int) xParams.bitsPerPacked;
+              << xParams.onesInPromiles << "\t" << (int) xParams.bitsPerPacked;
     if (bParams.repeats > 1)
         outStream << "\t" << bParams.repeats << "\t" << maxTime << "\t" << minTime << "\t";
     outStream << endl;
@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
 
     BenchmarkParams bParams;
     ExperimentParams xParams;
+    xParams.enableDatasetMode();
 
     parseArgs(argc, argv, bParams, xParams);
 
