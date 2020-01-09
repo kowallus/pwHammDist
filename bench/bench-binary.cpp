@@ -32,7 +32,34 @@ void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &x
     logResults(solver, bParams, xParams, times);
 
     cout << std::endl << "check: " << (brute / bParams.repeats) << std::endl;
-    if (bParams.verification) cout << "Veryfication uninmplemented :(";
+    if (bParams.verification) {
+        if (xParams.solverID != NAIVE_BRUTE_FORCE_ID) {
+            cout << "Verification... " << endl;
+            auto res = solver->findSimilarSequences(sequences);
+            xParams.solverID == NAIVE_BRUTE_FORCE_ID;
+            DBPISolver *const modelSolver = getSolverInstance(xParams);
+            auto modelRes = modelSolver->findSimilarSequences(sequences);
+            delete(modelSolver);
+            sort(res.begin(), res.end());
+            sort(modelRes.begin(), modelRes.end());
+            if (res == modelRes) {
+                cout << "OK!" << endl;
+            } else {
+                cout << "ERROR!" << endl;
+                for(size_t i = 0; i < res.size(); i++) {
+                    if (res[i] != modelRes[i]) {
+                        if (res[i] < modelRes[i]) {
+                            cout << "An example of false positive: " << res[i].first << " and " << res[i].second << endl;
+                        } else {
+                            cout << "An example of false negative: " << modelRes[i].first << " and " << modelRes[i].second << endl;
+                        }
+                    }
+                }
+            }
+        } else {
+            cout << "Model algorithm cannot be verified ";
+        }
+    }
 
     delete(sequences);
     if (bParams.verbose) cout << "The end..." << std::endl;
