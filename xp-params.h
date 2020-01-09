@@ -12,6 +12,8 @@ struct ExperimentParams {
     std::string datasetFileName;
     bool binaryMode = false;
 
+    bool alignSequences = true;
+
     uint16_t m = 512; // sequence length
     uint16_t d = 1024; // no of sequences
     uint16_t k = 32; // max hamming length

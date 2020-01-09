@@ -7,7 +7,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     int opt; // current option
 
-    std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") + std::string("r:a:vq?");
+    std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") + std::string("r:a:Avq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
@@ -21,6 +21,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case 'a':
                 xParams.solverID = std::string(optarg);
+                break;
+            case 'A':
+                xParams.alignSequences = false;
                 break;
             case 'q':
                 bParams.verbose = false;
@@ -38,7 +41,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-r noOfRepeats] [-v] [-q] ", argv[0]);
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
@@ -52,6 +55,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 for(pair<string, SolverFactory*> p: dbpi_solver_types_map) {
                     fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getSolverName().c_str());
                 }
+                fprintf(stderr, "\n-A ignore aligning sequences to 64-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "To disable binary mode apply: -b 0\n\n");

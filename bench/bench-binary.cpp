@@ -14,7 +14,8 @@ void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &x
     if (bParams.verbose) cout << "Generation of data..." << std::endl;
     xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.m, xParams.bitsPerPacked)
             * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
-    xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
+    if (xParams.alignSequences)
+        xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
     uint8_t* sequences = new uint8_t[xParams.d * xParams.bytesPerSequence]();
     getRandomValues(sequences, xParams);
 
