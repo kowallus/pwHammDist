@@ -33,14 +33,13 @@ struct ExperimentParams {
 
 
     void enableOnesInPromiles() { onesInPromiles = 900; }
-    bool isOnesInPromilesEnabled() { return onesInPromiles != DISABLE_ONES_IN_PROMILES; };
-
+    bool isOnesInPromilesEnabled() const { return onesInPromiles != DISABLE_ONES_IN_PROMILES; };
 
     void enableBitsPerPacked() { bitsPerPacked = 8; }
-    bool isBitsPerPackedEnabled() { return bitsPerPacked != DISABLE_BITS_PER_PACKED; }
+    bool isBitsPerPackedEnabled() const { return bitsPerPacked != DISABLE_BITS_PER_PACKED; };
 
-    bool isInBinaryMode() { return binaryMode; }
-    bool isInDatasetMode() { return datasetMode; }
+    bool isInBinaryMode() const { return binaryMode; }
+    bool isInDatasetMode() const { return datasetMode; }
 
     void enableBinaryMode() {
         binaryMode = true;

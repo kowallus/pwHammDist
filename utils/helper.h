@@ -40,6 +40,7 @@ unsigned long long int time_millis(chrono::steady_clock::time_point checkpoint);
 string toString(unsigned long long value);
 string toMB(unsigned long long value, unsigned char decimalPlaces);
 string toString(long double value, unsigned char decimalPlaces);
+string alignRight(string str, unsigned char width);
 
 // mathematical routines
 

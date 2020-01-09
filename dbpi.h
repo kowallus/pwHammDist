@@ -18,7 +18,7 @@ protected:
     DBPISolver(ExperimentParams &xParams): xParams(xParams) {};
 
 public:
-    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) = 0;
+    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t *sequences) = 0;
     virtual string getName() = 0;
 };
 
@@ -27,7 +27,7 @@ class Brute_DBPI_Solver : public DBPISolver {
 public:
     Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams) {};
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         vector<pair<uint16_t, uint16_t>> res;
         uint16_t seqInULLs = xParams.bytesPerSequence / 8;
         assert(xParams.bytesPerSequence == seqInULLs * 8);

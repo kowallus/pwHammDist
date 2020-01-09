@@ -233,6 +233,13 @@ string toString(long double value, unsigned char decimalPlaces) {
     return oss.str();
 }
 
+string alignRight(string str, unsigned char width) {
+    int spaces = width - str.length();
+    while(spaces-- > 0)
+        str.insert(str.begin(), ' ');
+    return str;
+};
+
 unsigned long long int powuint(unsigned long long int base, int exp)
 {
     if (exp == 0) return 1;
