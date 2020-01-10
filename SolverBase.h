@@ -20,10 +20,20 @@ protected:
 public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t *sequences) = 0;
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
-            const vector<pair<uint16_t, uint16_t>> pairs, ExperimentParams &xParams) = 0;
+            const vector<pair<uint16_t, uint16_t>> pairs) = 0;
     virtual bool testSequencesSimilarity(const uint8_t* sequences, uint16_t i, uint16_t j) = 0;
     virtual bool testSequencesSimilarity(const void* seq1, const void* seq2) = 0;
     virtual string getName() = 0;
+};
+
+class SolverFactory {
+private:
+    string solverName;
+
+public:
+    SolverFactory(string solverName): solverName(solverName) { }
+    string getSolverName() { return solverName; }
+    virtual DBPISolver* getSolverInstance(ExperimentParams& xParams) = 0;
 };
 
 template <bool naive, bool binaryAlphabet, typename uint = uint8_t>
@@ -56,7 +66,7 @@ public:
     };
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
-                                const vector<pair<uint16_t, uint16_t>> pairs, ExperimentParams &xParams) {
+                                const vector<pair<uint16_t, uint16_t>> pairs) {
         vector<pair<uint16_t, uint16_t>> res;
         for (pair<uint16_t, uint16_t> pair: pairs) {
             if (testSequencesSimilarity(sequences, pair.first, pair.second)) {

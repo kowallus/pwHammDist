@@ -32,9 +32,33 @@ public:
     }
 };
 
+class QuantizationBasedSolverFactory: public SolverFactory {
+public:
+    QuantizationBasedSolverFactory():SolverFactory(string("quantization-based")) {};
+
+    DBPISolver* getSolverInstance(ExperimentParams& xParams) {
+        if(xParams.isInBinaryMode()) {
+            fprintf(stderr, "Quantization unsupported for binary dataset.\n");
+            exit(EXIT_FAILURE);
+        } else {
+            DBPISolver* postSolver = BruteSolverFactory<false>().getSolverInstance(xParams);
+            SolverFactory* binarySolverFactory = new BruteSolverFactory<false>();
+            switch(xParams.bytesPerElement) {
+                case 1: return new QuantizationBased_DBPI_Solver<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binarySolverFactory, postSolver);
+                case 2: return new QuantizationBased_DBPI_Solver<uint16_t>(xParams, new SimpleBinaryQuantizer<uint16_t>(), binarySolverFactory, postSolver);
+                case 4: return new QuantizationBased_DBPI_Solver<uint32_t>(xParams, new SimpleBinaryQuantizer<uint32_t>(), binarySolverFactory, postSolver);
+                default:
+                    fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
+                    exit(EXIT_FAILURE);
+            }
+        }
+    }
+};
+
+
 map<string, SolverFactory*> dbpi_solver_types_map =
         {{NAIVE_BRUTE_FORCE_ID, new BruteSolverFactory<true>()},
-         {SHORT_CIRCUIT_BRUTE_FORCE_ID, new BruteSolverFactory<false>()}
-//         {"dt", "dbpit-transpone"}
+         {SHORT_CIRCUIT_BRUTE_FORCE_ID, new BruteSolverFactory<false>()},
+         {QUATIZATION_BASED_SOLVER_ID, new QuantizationBasedSolverFactory()}
          };
 
