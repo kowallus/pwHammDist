@@ -19,8 +19,16 @@ public:
     DBPISolver* getSolverInstance(ExperimentParams& xParams) {
         if(xParams.isInBinaryMode())
             return new Brute_DBPI_Solver<naive, true>(xParams);
-        else
-            return new Brute_DBPI_Solver<naive, false>(xParams);
+        else {
+            switch(xParams.bytesPerElement) {
+                case 1: return new Brute_DBPI_Solver<naive, false, uint8_t>(xParams);
+                case 2: return new Brute_DBPI_Solver<naive, false, uint16_t>(xParams);
+                case 4: return new Brute_DBPI_Solver<naive, false, uint32_t>(xParams);
+                default:
+                    fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
+                    exit(EXIT_FAILURE);
+            }
+        }
     }
 };
 

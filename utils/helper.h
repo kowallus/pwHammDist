@@ -122,7 +122,8 @@ string transpose(string matrix, uint64_t rows, uint64_t cols) {
 
 // binary sequence comparison routines
 
-inline uint64_t hammingDistance(const uint8_t* x, const uint8_t* y, int length) {
+template<typename uint>
+inline uint64_t hammingDistance(const uint* x, const uint* y, int length) {
     uint64_t res = 0;
     for (int i = 0; i < length; i++)
         if (x[i] != y[i])
@@ -130,12 +131,13 @@ inline uint64_t hammingDistance(const uint8_t* x, const uint8_t* y, int length) 
     return res;
 }
 
-inline uint64_t hammingDistance(const uint8_t* x, const uint8_t* y, int length, const int limit) {
+template<typename uint>
+inline uint64_t hammingDistance(const uint* x, const uint* y, int length, const int limit) {
     uint64_t res = 0;
 
     int i = 0;
     while(i < length) {
-        int end = i + 64;
+        int end = i + 1024;
         if (end > length)
             end = length;
         do {
@@ -173,6 +175,24 @@ inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int 
 
     for (; i < length; i++) {
         res += __builtin_popcountll(x[i] ^ y[i]);
+        if (res > limit)
+            return res;
+    }
+
+    return res;
+}
+
+inline uint64_t hammingDistanceBinarySparseSC(const uint64_t *x, const uint64_t *y, int length, int limit) {
+    uint64_t res = 0;
+
+    int i = 0;
+    while(i < length) {
+        int end = i + 32;
+        if (end > length)
+            end = length;
+        do {
+            res += __builtin_popcountll(x[i] ^ y[i]);
+        } while (++i < end);
         if (res > limit)
             return res;
     }

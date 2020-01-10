@@ -2,67 +2,142 @@
 #include "../utils/testdata.h"
 #include "cli.h"
 #include "../SolverFactory.h"
-
-void resultsToStream(ostream &outStream, const BenchmarkParams &bParams, const ExperimentParams &xParams,
-                     const vector<double> &times);
-
-void logResults(const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
+#include "bench.h"
 
 using namespace std;
 
-void benchmark(DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
-    if (bParams.verbose) cout << "Generation of data..." << std::endl;
-    xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.m, xParams.bitsPerPacked)
-                               * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
-    xParams.bytesPerSequence = ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
-    uint8_t* sequences = new uint8_t[xParams.d * xParams.bytesPerSequence]();
-    getRandomValues(sequences, xParams);
-
-    if (bParams.verbose) cout << "Solving... " << endl;
-
-    vector<double> times;
-    int brute = 0;
-    for(int i = 0; i < bParams.repeats; i++) {
-        cleanCache();
-        time_checkpoint();
-        brute += solver->findSimilarSequences(sequences).size();
-        times.push_back(time_millis());
+void scanDNAdataset(ifstream &src, ExperimentParams &xParams) {
+    string seq;
+    int length;
+    bool alphaPresent[UINT8_MAX] = { false };
+    while (getline( src, seq )) {
+        xParams.d++;
+        for (length = 0; length < seq.length(); length++) {
+            if (!isalpha(seq[length]))
+                break;
+            if (!alphaPresent[seq[length]]) {
+                alphaPresent[seq[length]] = true;
+                xParams.alphabetSize++;
+            }
+        }
+        if (xParams.m == 0)
+            xParams.m = length;
+        if (xParams.m != length) {
+            fprintf(stderr, "ERROR: variable length of sequences.\n");
+            exit(EXIT_FAILURE);
+        }
     }
-    logResults(bParams, xParams, times);
 
-    cout << std::endl << "check: " << (brute / bParams.repeats) << std::endl;
-    if (bParams.verification) cout << "Veryfication uninmplemented :(";
-
-    delete(sequences);
-    if (bParams.verbose) cout << "The end..." << std::endl;
+    uint8_t value = 0;
+    for(int i = 0; i < UINT8_MAX; i++) {
+        if (alphaPresent[i])
+            xParams.symbol2value[i] = value++;
+    }
 }
 
-void logResults(const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times) {
-    sort(times.begin(), times.end());
-    ofstream fout("dbpit_res.txt", ios_base::out | ios_base::binary | ios_base::app);
+void scanIntegerDataset(ifstream &src, ExperimentParams &xParams) {
+    string seq;
+    int value;
+    int length;
+    while (getline( src, seq )) {
+        xParams.d++;
+        length = 0;
+        istringstream seqStr( seq );
+        while( seqStr >> value ) {
+            if (value < 0) {
+                fprintf(stderr, "ERROR: unsupported negative values in sequences: %d.\n", value);
+                exit(EXIT_FAILURE);
+            }
+            length++;
+            if (xParams.alphabetSize < value + 1)
+                xParams.alphabetSize = value + 1;
+        }
+        if (xParams.m == 0)
+            xParams.m = length;
+        if (xParams.m != length) {
+            fprintf(stderr, "ERROR: variable length of sequences.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
-    resultsToStream(fout, bParams, xParams, times);
+void scanSequences(ifstream &src, ExperimentParams &xParams) {
+    src.clear();
+    src.seekg(0, src.beg);
+    xParams.dnaDataMode = isalpha((char) src.peek());
+    if (xParams.dnaDataMode) {
+        scanDNAdataset(src, xParams);
+    } else {
+        scanIntegerDataset(src, xParams);
+    }
+}
+
+void loadDNAsequences(ifstream &src, uint8_t* sequences, ExperimentParams &xParams) {
+    src.clear();
+    src.seekg(0, src.beg);
+    string seq;
+    uint8_t* cur = sequences;
+    while (getline( src, seq )) {
+        for(int i = 0; i < xParams.m; i++)
+            cur[i] = xParams.symbol2value[seq[i]];
+        cur += xParams.bytesPerSequence;
+    }
+}
+
+void loadIntegerSequences(ifstream &src, uint8_t* sequences, ExperimentParams &xParams) {
+    src.clear();
+    src.seekg(0, src.beg);
+    string seq;
+    int value;
+    uint8_t* cur = sequences;
+    while (getline( src, seq )) {
+        istringstream seqStr( seq );
+        for(int i = 0; i < xParams.m; i++) {
+            seqStr >> value;
+            void* dest = cur + (i * xParams.bytesPerElement);
+            switch(xParams.bytesPerElement) {
+                case 1: *((uint8_t*) dest) = value;
+                    break;
+                case 2: *((uint16_t*) dest) = value;
+                    break;
+                case 4: *((uint32_t*) dest) = value;
+                    break;
+                default:
+                    fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
+                    exit(EXIT_FAILURE);
+            }
+        }
+        cur += xParams.bytesPerSequence;
+    }
+}
+
+uint8_t* loadSequences(BenchmarkParams &bParams, ExperimentParams &xParams) {
+    const char* srcFile = xParams.datasetFileName.c_str();
+    ifstream src(srcFile, ios_base::in | ios_base::binary);
+    if (src.fail()) {
+        fprintf(stderr, "cannot open reads file %s\n", srcFile);
+        exit(EXIT_FAILURE);
+    }
+    if (bParams.verbose) cout << "Scanning dataset " << xParams.datasetFileName << " ..." << endl;
+    scanSequences(src, xParams);
     if (bParams.verbose) {
-        cout << endl << "total time [ms]; algID; m; d; k; ones [%]; bits_packed";
-        if (bParams.repeats > 1)
-            cout << "; repeats; max/min time [ms]";
-        cout <<  endl;
+        cout << "m = " << xParams.m << "; ";
+        cout << "d = " << xParams.d << "; ";
+        cout << "sigma = " << xParams.alphabetSize << endl;
+        cout << "Loading data..." << std::endl;
     }
-    resultsToStream(cout, bParams, xParams, times);
+    xParams.bytesPerElement =  xParams.alphabetSize - 1 <= UINT8_MAX?1:(xParams.alphabetSize - 1 <= UINT16_MAX?2:4);
+    xParams.bytesPerSequence = (int) xParams.m * xParams.bytesPerElement;
+    if (xParams.alignSequences)
+        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
+    uint8_t* sequences = new uint8_t[(size_t) xParams.d * xParams.bytesPerSequence]();
+    if (xParams.dnaDataMode) {
+        loadDNAsequences(src, sequences, xParams);
+    } else {
+        loadIntegerSequences(src, sequences, xParams);
+    }
+    return sequences;
 }
-
-void resultsToStream(ostream &outStream, const BenchmarkParams &bParams, const ExperimentParams &xParams,
-                     const vector<double> &times) {
-    double maxTime = times[bParams.repeats - 1];
-    double medianTime = times[times.size()/2];
-    double minTime = times[0];
-    outStream << medianTime << "\t" << xParams.solverID << "\t" << xParams.m << "\t" << xParams.d << "\t" << xParams.k << "\t"
-              << xParams.onesInPromiles << "\t" << (int) xParams.bitsPerPacked;
-    if (bParams.repeats > 1)
-        outStream << "\t" << bParams.repeats << "\t" << maxTime << "\t" << minTime << "\t";
-    outStream << endl;
-}
-
 
 int main(int argc, char *argv[]) {
 
@@ -72,11 +147,13 @@ int main(int argc, char *argv[]) {
 
     parseArgs(argc, argv, bParams, xParams);
 
+    uint8_t* sequences = loadSequences(bParams, xParams);
     DBPISolver* solver = getSolverInstance(xParams);
 
-    benchmark(solver, bParams, xParams);
+    benchmark(sequences, solver, bParams, xParams);
 
     delete(solver);
+    delete(sequences);
 
     return 0;
 }

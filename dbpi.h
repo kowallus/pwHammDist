@@ -22,7 +22,7 @@ public:
     virtual string getName() = 0;
 };
 
-template <bool naive, bool binaryAlphabet>
+template <bool naive, bool binaryAlphabet, typename uint = uint8_t>
 class Brute_DBPI_Solver : public DBPISolver {
 public:
     Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams) {};
@@ -30,7 +30,10 @@ public:
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         vector<pair<uint16_t, uint16_t>> res;
         uint16_t seqInULLs = xParams.bytesPerSequence / 8;
-        assert(xParams.bytesPerSequence == seqInULLs * 8);
+        if (xParams.bytesPerSequence != seqInULLs * 8) {
+            fprintf(stderr, "ERROR: brute solver does not support unaligned data.\n");
+            exit(EXIT_FAILURE);
+        }
         uint64_t *x = (uint64_t*) sequences;
         for(int i = 0; i < xParams.d - 1; i++) {
             uint64_t *y = x + seqInULLs;
@@ -40,8 +43,8 @@ public:
                     dist = naive? hammingDistanceBinary(x, y, seqInULLs): hammingDistanceBinary(x, y, seqInULLs,
                                                                                                 xParams.k);
                 else
-                    dist = naive?hammingDistance((uint8_t*) x, (uint8_t*) y, xParams.bytesPerSequence):
-                           hammingDistance((uint8_t*) x, (uint8_t*) y, xParams.bytesPerSequence, xParams.k);
+                    dist = naive?hammingDistance((uint*) x, (uint*) y, xParams.m):
+                           hammingDistance((uint*) x, (uint*) y, xParams.m, xParams.k);
                 if (dist <= xParams.k) {
                     res.push_back(pair<uint16_t, uint16_t>(i, j));
                 }

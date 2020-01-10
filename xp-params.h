@@ -14,9 +14,9 @@ struct ExperimentParams {
 
     bool alignSequences = true;
 
-    uint16_t m = 512; // sequence length
-    uint16_t d = 1024; // no of sequences
-    uint16_t k = 32; // max hamming length
+    uint16_t m = 0; // sequence length
+    uint16_t d = 0; // no of sequences
+    uint16_t k = 0; // max hamming length
     std::string solverID = "nbf";
 
     // extra params
@@ -24,15 +24,18 @@ struct ExperimentParams {
     const uint8_t DISABLE_BITS_PER_PACKED = UINT8_MAX;
     const uint16_t DISABLE_ONES_IN_PROMILES = UINT16_MAX;
 
-    uint8_t bitsPerPacked = 8; //bits in packed value
-    uint16_t onesInPromiles = 900; // density of 1 bits in sequences (in promiles)
+    uint8_t bitsPerPacked = DISABLE_BITS_PER_PACKED; //bits in packed value
+    uint16_t onesInPromiles = DISABLE_ONES_IN_PROMILES; // density of 1 bits in sequences (in promiles)
 
     // data properties
 
+    bool dnaDataMode = false;
+    uint8_t symbol2value[UINT8_MAX] = { 0 };
+    uint32_t alphabetSize = 0;
+    uint8_t bytesPerElement = 0;
     uint32_t bytesPerSequence = 0;
 
-
-    void enableOnesInPromiles() { onesInPromiles = 900; }
+    void enableOnesInPromiles() { onesInPromiles = 500; }
     bool isOnesInPromilesEnabled() const { return onesInPromiles != DISABLE_ONES_IN_PROMILES; };
 
     void enableBitsPerPacked() { bitsPerPacked = 8; }
@@ -43,6 +46,7 @@ struct ExperimentParams {
 
     void enableBinaryMode() {
         binaryMode = true;
+        alphabetSize = 2;
         enableOnesInPromiles();
         enableBitsPerPacked();
     }

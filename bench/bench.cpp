@@ -61,7 +61,7 @@ void logResults(DBPISolver* solver, const BenchmarkParams &bParams, const Experi
 
     resultsToStream(fout, solver, bParams, xParams, times);
     if (bParams.verbose) {
-        cout << endl << "time[ms]\t  algID\t    m\t    d\t    k" <<
+        cout << endl << "time[ms]\t  algID\t    m\t    d\tsigma\t    k" <<
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
             (xParams.isBitsPerPackedEnabled()?"\tbits_packed":"");
         if (bParams.repeats > 1)
@@ -78,7 +78,7 @@ void resultsToStream(ostream &outStream, DBPISolver* solver, const BenchmarkPara
     double minTime = times[0];
     outStream << alignRight(toString(medianTime), 8) << "\t" << alignRight(solver->getName(), 7) <<
         "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
-        "\t" << alignRight(toString(xParams.k), 5);
+        "\t" << alignRight(toString(xParams.alphabetSize), 5) << "\t" << alignRight(toString(xParams.k), 5);
     if (xParams.isOnesInPromilesEnabled())
         outStream << "\t" << alignRight(toString(xParams.onesInPromiles),7);
     if (xParams.isBitsPerPackedEnabled())
