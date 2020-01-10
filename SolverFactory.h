@@ -1,7 +1,7 @@
 #ifndef DBPIT_SOLVERFACTORY_H
 #define DBPIT_SOLVERFACTORY_H
 
-#include "dbpi.h"
+#include "SolverBase.h"
 #include "xp-params.h"
 #include <map>
 

@@ -21,13 +21,13 @@ set(HELPER_FILES
 
 set(DBPIT_FILES
         ${HELPER_FILES} ${PARAMS_FILES}
-        dbpi.h SolverFactory.cpp SolverFactory.h bench/bench.cpp bench/bench.h)
+        SolverBase.h SolverFactory.cpp SolverFactory.h bench/bench.cpp bench/bench.h)
 
 add_executable(bench-binary bench/main-binary.cpp ${DBPIT_FILES} )
-add_executable(bench-dataset bench/main-dataset.cpp ${DBPIT_FILES} )
+add_executable(bench-dataset bench/main-dataset.cpp ${DBPIT_FILES} QuantizationSolver.h)
 
 add_executable(bench-binary-win bench/main-binary.cpp ${DBPIT_FILES})
-add_executable(bench-dataset-win bench/main-dataset.cpp ${DBPIT_FILES})
+add_executable(bench-dataset-win bench/main-dataset.cpp ${DBPIT_FILES} QuantizationSolver.h)
 if((CYGWIN OR MINGW) AND ${CMAKE_BUILD_TYPE} MATCHES "Release")
     message("Windows static build: ${CMAKE_SYSTEM} ${CMAKE_SYSTEM_NAME}")
     target_link_libraries(bench-binary-win -static -static-libgcc -static-libstdc++)
