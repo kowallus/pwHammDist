@@ -12,6 +12,9 @@ class BinaryQuantizer {
 protected:
     uint8_t* qSequences = 0;
     ExperimentParams qxParams;
+
+    virtual void quantizeSequence(uint8_t* dest, uint* src) = 0;
+
 public:
     BinaryQuantizer() {
         qxParams.enableBinaryMode();
@@ -29,20 +32,10 @@ public:
         uint8_t* qCur;
         for(uint16_t i = 0; i < qxParams.d; i++) {
             uint* seq = (uint*) ((uint8_t*) sequences + (size_t) i * xParams.bytesPerSequence);
-            qCur = (qSequences + i * qxParams.bytesPerSequence) - 1;
-            uint8_t b = 0;
-            for (uint16_t j = 0; j < qxParams.m; j++) {
-                if (b % 8 == 0)
-                    *(++qCur) = 0;
-                if (quantize(seq[j]))
-                    *qCur += 1 << (b % 8);
-                if (++b == 8)
-                    b = 0;
-            }
+            qCur = (qSequences + i * qxParams.bytesPerSequence);
+            quantizeSequence(qCur, seq);
         }
     };
-
-    virtual bool quantize(uint value) = 0;
 
     virtual string getName() = 0;
 
@@ -62,9 +55,14 @@ public:
 
 template<typename uint>
 class SimpleBinaryQuantizer: public BinaryQuantizer<uint> {
-
-    bool quantize(uint value) {
-        return value & 1;
+protected:
+    inline void quantizeSequence(uint8_t* dest, uint* src) {
+        uint16_t j = 0;
+        while(j < this->qxParams.m) {
+            for(uint8_t b = 0; b < 8; b++)
+                *dest += (src[j++] & 1) << b;
+            ++dest;
+        }
     }
 
 public:
@@ -97,11 +95,12 @@ public:
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+        cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
         quantizer->quantize(sequences, xParams);
-        cout << "quantized... " << endl;
+        cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
         qSolver = quantizedFilterSolverFactory->getSolverInstance(quantizer->getQxParams());
         auto qRes = qSolver->findSimilarSequences(quantizer->getQSequences());
-        cout << "filterCheck: " << qRes.size() << endl;
+        cout << "filterCheck: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
         vector<pair<uint16_t, uint16_t>> res = postSolver->findSimilarSequences(sequences, qRes);
         return res;
     };
