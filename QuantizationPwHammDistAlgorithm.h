@@ -1,11 +1,11 @@
-#ifndef DBPIT_QUANTIZATIONSOLVER_H
-#define DBPIT_QUANTIZATIONSOLVER_H
+#ifndef PWHD_QUANTIZATIONALGORITHM_H
+#define PWHD_QUANTIZATIONALGORITHM_H
 
-#include "SolverBase.h"
+#include "PwHammDistAlgorithmBase.h"
 
 const string SIMPLE_BINARY_QUANTIZER_ID = "sbq";
 
-const string QUATIZATION_BASED_SOLVER_ID = "qb";
+const string QUATIZATION_BASED_FILTER_PWHD_ID = "qbf";
 
 template<typename uint>
 class BinaryQuantizer {
@@ -73,56 +73,56 @@ public:
 };
 
 template<typename uint>
-class QuantizationBased_DBPI_Solver : public DBPISolver {
+class QuantizationBasedPwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     BinaryQuantizer<uint>* quantizer;
-    SolverFactory* quantizedFilterSolverFactory;
-    DBPISolver* postSolver;
-    DBPISolver* qSolver = 0;
+    PwHammDistAlgorithmFactory* quantizedFilterAlgorithmFactory;
+    PwHammDistAlgorithm* postAlgorithm;
+    PwHammDistAlgorithm* qAlgorithm = 0;
 
 public:
-    QuantizationBased_DBPI_Solver(ExperimentParams &xParams, BinaryQuantizer<uint> *quantizer,
-                                  SolverFactory *quantizedFilterSolverFactory, DBPISolver *postSolver) : DBPISolver(
-            xParams), quantizer(quantizer), quantizedFilterSolverFactory(quantizedFilterSolverFactory), postSolver(
-            postSolver) {}
+    QuantizationBasedPwHammDistAlgorithm(ExperimentParams &xParams, BinaryQuantizer<uint> *quantizer,
+            PwHammDistAlgorithmFactory *quantizedFilterAlgorithmFactory, PwHammDistAlgorithm *postAlgorithm) : PwHammDistAlgorithm(
+            xParams), quantizer(quantizer), quantizedFilterAlgorithmFactory(quantizedFilterAlgorithmFactory), postAlgorithm(
+            postAlgorithm) {}
 
-    virtual ~QuantizationBased_DBPI_Solver() {
-        delete(quantizedFilterSolverFactory);
-        delete(postSolver);
+    virtual ~QuantizationBasedPwHammDistAlgorithm() {
+        delete(quantizedFilterAlgorithmFactory);
+        delete(postAlgorithm);
         delete(quantizer);
-        if (qSolver)
-            delete(qSolver);
+        if (qAlgorithm)
+            delete(qAlgorithm);
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
         quantizer->quantize(sequences, xParams);
         cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
-        qSolver = quantizedFilterSolverFactory->getSolverInstance(quantizer->getQxParams());
-        auto qRes = qSolver->findSimilarSequences(quantizer->getQSequences());
+        qAlgorithm = quantizedFilterAlgorithmFactory->getAlgorithmInstance(quantizer->getQxParams());
+        auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences());
         cout << "filterCheck: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
-        vector<pair<uint16_t, uint16_t>> res = postSolver->findSimilarSequences(sequences, qRes);
+        vector<pair<uint16_t, uint16_t>> res = postAlgorithm->findSimilarSequences(sequences, qRes);
         return res;
     };
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
-        return postSolver->findSimilarSequences(sequences, pairs);
+        return postAlgorithm->findSimilarSequences(sequences, pairs);
     }
 
     inline bool testSequencesSimilarity(const uint8_t* sequences, uint16_t i, uint16_t j) {
-        return postSolver->testSequencesSimilarity(sequences, i, j);
+        return postAlgorithm->testSequencesSimilarity(sequences, i, j);
     };
 
     inline bool testSequencesSimilarity(const void* seq1, const void* seq2) {
-        return postSolver->testSequencesSimilarity(seq1, seq2);
+        return postAlgorithm->testSequencesSimilarity(seq1, seq2);
     }
 
     string getName() {
-        return QUATIZATION_BASED_SOLVER_ID + "+" +
+        return QUATIZATION_BASED_FILTER_PWHD_ID + "+" +
             quantizer->getName() + "+" +
-            (qSolver?qSolver->getName():"UNKNOWN") + "+" + postSolver->getName();
+            (qAlgorithm?qAlgorithm->getName():"UNKNOWN") + "+" + postAlgorithm->getName();
     }
 };
 
-#endif //DBPIT_QUANTIZATIONSOLVER_H
+#endif //PWHD_QUANTIZATIONALGORITHM_H

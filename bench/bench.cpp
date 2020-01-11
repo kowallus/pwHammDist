@@ -1,18 +1,18 @@
 #include "bench.h"
 
-void resultsToStream(ostream &outStream, DBPISolver* solver, const BenchmarkParams &bParams, const ExperimentParams &xParams,
+void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,
                      const vector<double> &times);
 
-void logResults(DBPISolver* solver, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
+void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
 
-void verifySolverResult(const uint8_t *sequences, DBPISolver *solver, ExperimentParams &xParams) {
-    if (xParams.solverID != NAIVE_BRUTE_FORCE_ID) {
+void verifyAlgorithmResult(const uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
+    if (xParams.algorithmID != NAIVE_BRUTE_FORCE_ID) {
             cout << "Verification... " << endl;
-            auto res = solver->findSimilarSequences(sequences);
-            xParams.solverID == NAIVE_BRUTE_FORCE_ID;
-            DBPISolver *const modelSolver = getSolverInstance(xParams);
-            auto modelRes = modelSolver->findSimilarSequences(sequences);
-            delete(modelSolver);
+            auto res = algorithm->findSimilarSequences(sequences);
+            xParams.algorithmID == NAIVE_BRUTE_FORCE_ID;
+            PwHammDistAlgorithm *const modelAlgorithm = getPwHammDistAlgorithmInstance(xParams);
+            auto modelRes = modelAlgorithm->findSimilarSequences(sequences);
+            delete(modelAlgorithm);
             sort(res.begin(), res.end());
             sort(modelRes.begin(), modelRes.end());
             if (res == modelRes) {
@@ -34,7 +34,7 @@ void verifySolverResult(const uint8_t *sequences, DBPISolver *solver, Experiment
         }
 }
 
-void benchmark(uint8_t* sequences, DBPISolver* solver, BenchmarkParams &bParams, ExperimentParams &xParams) {
+void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkParams &bParams, ExperimentParams &xParams) {
 
     if (bParams.verbose) cout << "Solving... " << endl;
 
@@ -43,23 +43,23 @@ void benchmark(uint8_t* sequences, DBPISolver* solver, BenchmarkParams &bParams,
     for(int i = 0; i < bParams.repeats; i++) {
         cleanCache();
         time_checkpoint();
-        brute += solver->findSimilarSequences(sequences).size();
+        brute += algorithm->findSimilarSequences(sequences).size();
         times.push_back(time_millis());
     }
-    logResults(solver, bParams, xParams, times);
+    logResults(algorithm, bParams, xParams, times);
 
     cout << std::endl << "check: " << (brute / bParams.repeats) << std::endl;
     if (bParams.verification) {
-        verifySolverResult(sequences, solver, xParams);
+        verifyAlgorithmResult(sequences, algorithm, xParams);
     }
     if (bParams.verbose) cout << "The end..." << std::endl;
 }
 
-void logResults(DBPISolver* solver, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times) {
+void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times) {
     sort(times.begin(), times.end());
     ofstream fout(BENCH_LOG_FILENAME, ios_base::out | ios_base::binary | ios_base::app);
 
-    resultsToStream(fout, solver, bParams, xParams, times);
+    resultsToStream(fout, algorithm, bParams, xParams, times);
     if (bParams.verbose) {
         cout << endl << "time[ms]\t               algID\t    m\t    d\tsigma\t    k" <<
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
@@ -68,15 +68,15 @@ void logResults(DBPISolver* solver, const BenchmarkParams &bParams, const Experi
             cout << "\trepeats\tmax/min time [ms]";
         cout <<  endl;
     }
-    resultsToStream(cout, solver, bParams, xParams, times);
+    resultsToStream(cout, algorithm, bParams, xParams, times);
 }
 
-void resultsToStream(ostream &outStream, DBPISolver* solver, const BenchmarkParams &bParams,
+void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams,
                      const ExperimentParams &xParams, const vector<double> &times) {
     double maxTime = times[bParams.repeats - 1];
     double medianTime = times[times.size()/2];
     double minTime = times[0];
-    outStream << alignRight(toString(medianTime), 8) << "\t" << alignRight(solver->getName(), 20) <<
+    outStream << alignRight(toString(medianTime), 8) << "\t" << alignRight(algorithm->getName(), 20) <<
         "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
         "\t" << alignRight(toString(xParams.alphabetSize), 5) << "\t" << alignRight(toString(xParams.k), 5);
     if (xParams.isOnesInPromilesEnabled())

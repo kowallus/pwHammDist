@@ -20,7 +20,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 }
                 break;
             case 'a':
-                xParams.solverID = std::string(optarg);
+                xParams.algorithmID = std::string(optarg);
                 break;
             case 'A':
                 xParams.alignSequences = false;
@@ -52,8 +52,8 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                     fprintf(stderr, "m d ");
                 fprintf(stderr, "k\n\n");
                 fprintf(stderr, "algorithm ID : algorithm name\n");
-                for(pair<string, SolverFactory*> p: dbpi_solver_types_map) {
-                    fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getSolverName().c_str());
+                for(pair<string, PwHammDistAlgorithmFactory*> p: pwHammDistAlgorithmTypesMap) {
+                    fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getAlgorithmName().c_str());
                 }
                 fprintf(stderr, "\n-A ignore aligning sequences to 64-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");

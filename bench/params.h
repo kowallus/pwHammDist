@@ -1,5 +1,5 @@
-#ifndef DBPIT_BENCH_PARAMS_H
-#define DBPIT_BENCH_PARAMS_H
+#ifndef PWHD_BENCH_PARAMS_H
+#define PWHD_BENCH_PARAMS_H
 
 struct BenchmarkParams {
 
@@ -9,4 +9,4 @@ struct BenchmarkParams {
 
 };
 
-#endif //DBPIT_BENCH_PARAMS_H
+#endif //PWHD_BENCH_PARAMS_H

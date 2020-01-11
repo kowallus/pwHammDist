@@ -1,5 +1,5 @@
-#ifndef SOLVER_BASE_H
-#define SOLVER_BASE_H
+#ifndef ALGORITHM_BASE_H
+#define ALGORITHM_BASE_H
 
 #include "utils/helper.h"
 #include "xp-params.h"
@@ -12,10 +12,10 @@ const string NAIVE_BRUTE_FORCE_ID = "nbf";
 const string SHORT_CIRCUIT_BRUTE_FORCE_ID = "sbf";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
 
-class DBPISolver {
+class PwHammDistAlgorithm {
 protected:
     ExperimentParams &xParams;
-    DBPISolver(ExperimentParams &xParams): xParams(xParams) {};
+    PwHammDistAlgorithm(ExperimentParams &xParams): xParams(xParams) {};
 
 public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t *sequences) = 0;
@@ -26,25 +26,25 @@ public:
     virtual string getName() = 0;
 };
 
-class SolverFactory {
+class PwHammDistAlgorithmFactory {
 private:
-    string solverName;
+    string algorithmName;
 
 public:
-    SolverFactory(string solverName): solverName(solverName) { }
-    string getSolverName() { return solverName; }
-    virtual DBPISolver* getSolverInstance(ExperimentParams& xParams) = 0;
+    PwHammDistAlgorithmFactory(string algorithmName): algorithmName(algorithmName) { }
+    string getAlgorithmName() { return algorithmName; }
+    virtual PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) = 0;
 };
 
 template <bool naive, bool binaryAlphabet, typename uint = uint8_t>
-class Brute_DBPI_Solver : public DBPISolver {
+class BrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
 
 public:
-    Brute_DBPI_Solver(ExperimentParams &xParams): DBPISolver(xParams), seqInULLs(xParams.bytesPerSequence / 8) {
+    BrutePwHammDistAlgorithm(ExperimentParams &xParams): PwHammDistAlgorithm(xParams), seqInULLs(xParams.bytesPerSequence / 8) {
         if (xParams.bytesPerSequence != seqInULLs * 8) {
-            fprintf(stderr, "ERROR: brute solver does not support unaligned data.\n");
+            fprintf(stderr, "ERROR: brute algorithm does not support unaligned data.\n");
             exit(EXIT_FAILURE);
         }
     };
@@ -96,4 +96,4 @@ public:
     string getName() { return (naive?NAIVE_BRUTE_FORCE_ID:SHORT_CIRCUIT_BRUTE_FORCE_ID) + (binaryAlphabet?BINARY_MODE_ID_SUFFIX:""); }
 };
 
-#endif //SOLVER_BASE_H
+#endif //ALGORITHM_BASE_H

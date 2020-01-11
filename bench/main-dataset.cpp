@@ -1,7 +1,7 @@
 #include "../utils/helper.h"
 #include "../utils/testdata.h"
 #include "cli.h"
-#include "../SolverFactory.h"
+#include "../PwHammDistAlgorithmFactory.h"
 #include "bench.h"
 
 using namespace std;
@@ -148,11 +148,11 @@ int main(int argc, char *argv[]) {
     parseArgs(argc, argv, bParams, xParams);
 
     uint8_t* sequences = loadSequences(bParams, xParams);
-    DBPISolver* solver = getSolverInstance(xParams);
+    PwHammDistAlgorithm* algorithm = getPwHammDistAlgorithmInstance(xParams);
 
-    benchmark(sequences, solver, bParams, xParams);
+    benchmark(sequences, algorithm, bParams, xParams);
 
-    delete(solver);
+    delete(algorithm);
     delete(sequences);
 
     return 0;

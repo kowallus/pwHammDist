@@ -1,5 +1,5 @@
-#ifndef DBPIT_XP_PARAMS_H
-#define DBPIT_XP_PARAMS_H
+#ifndef PWHD_XP_PARAMS_H
+#define PWHD_XP_PARAMS_H
 
 #include <cstdint>
 #include <string>
@@ -17,7 +17,7 @@ struct ExperimentParams {
     uint16_t m = 0; // sequence length
     uint16_t d = 0; // no of sequences
     uint16_t k = 0; // max hamming length
-    std::string solverID = "nbf";
+    std::string algorithmID = "nbf";
 
     // extra params
 
@@ -57,4 +57,4 @@ struct ExperimentParams {
 
 };
 
-#endif //DBPIT_XP_PARAMS_H
+#endif //PWHD_XP_PARAMS_H
