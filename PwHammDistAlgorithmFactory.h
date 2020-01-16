@@ -2,6 +2,7 @@
 #define PWHD_ALGORITHMFACTORY_H
 
 #include "QuantizationPwHammDistAlgorithm.h"
+#include "NibbleBasedPwHammDistAlgorithm.h"
 #include "xp-params.h"
 #include <map>
 

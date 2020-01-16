@@ -11,15 +11,23 @@ PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams) {
 }
 
 
-template<bool naive>
+template<bool naive, bool nibble = false>
 class BrutePwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
 public:
-    BrutePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string(naive?"naive ":"short-circuit ") + string("brute-force")) {};
+    BrutePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string(nibble?"nibble ":"") + string(naive?"naive ":"short-circuit ") + string("brute-force")) {};
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
         if(xParams.isInBinaryMode())
             return new BrutePwHammDistAlgorithm<naive, true>(xParams);
-        else {
+        else if (nibble) {
+            switch(xParams.bytesPerElement) {
+                case 1: return new NibbleBrutePwHammDistAlgorithm<naive, uint8_t>(xParams);
+                case 2: return new NibbleBrutePwHammDistAlgorithm<naive, uint16_t>(xParams);
+                default:
+                    fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
+                    exit(EXIT_FAILURE);
+            }
+        } else {
             switch(xParams.bytesPerElement) {
                 case 1: return new BrutePwHammDistAlgorithm<naive, false, uint8_t>(xParams);
                 case 2: return new BrutePwHammDistAlgorithm<naive, false, uint16_t>(xParams);
@@ -41,7 +49,7 @@ public:
             fprintf(stderr, "Quantization unsupported for binary dataset.\n");
             exit(EXIT_FAILURE);
         } else {
-            PwHammDistAlgorithm* postAlgorithm = BrutePwHammDistAlgorithmFactory<false>().getAlgorithmInstance(xParams);
+            PwHammDistAlgorithm* postAlgorithm = BrutePwHammDistAlgorithmFactory<true, true>().getAlgorithmInstance(xParams);
             PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new BrutePwHammDistAlgorithmFactory<false>();
             switch(xParams.bytesPerElement) {
                 case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory, postAlgorithm);
@@ -59,6 +67,8 @@ public:
 map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap =
         {{NAIVE_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<true>()},
          {SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false>()},
-         {QUATIZATION_BASED_FILTER_PWHD_ID, new QuantizationBasedPwHammDistAlgorithmFactory()}
+         {QUATIZATION_BASED_FILTER_PWHD_ID, new QuantizationBasedPwHammDistAlgorithmFactory()},
+         {NIBBLE_NAIVE_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<true, true>()},
+         {NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false, true>()}
          };
 

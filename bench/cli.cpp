@@ -55,7 +55,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 for(pair<string, PwHammDistAlgorithmFactory*> p: pwHammDistAlgorithmTypesMap) {
                     fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getAlgorithmName().c_str());
                 }
-                fprintf(stderr, "\n-A ignore aligning sequences to 64-bit");
+                fprintf(stderr, "\n-A ignore aligning sequences to 128-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "To disable binary mode apply: -b 0\n\n");

@@ -129,7 +129,7 @@ uint8_t* loadSequences(BenchmarkParams &bParams, ExperimentParams &xParams) {
     xParams.bytesPerElement =  xParams.alphabetSize - 1 <= UINT8_MAX?1:(xParams.alphabetSize - 1 <= UINT16_MAX?2:4);
     xParams.bytesPerSequence = (int) xParams.m * xParams.bytesPerElement;
     if (xParams.alignSequences)
-        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
+        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 16) * 16;
     uint8_t* sequences = new uint8_t[(size_t) xParams.d * xParams.bytesPerSequence]();
     if (xParams.dnaDataMode) {
         loadDNAsequences(src, sequences, xParams);

@@ -11,7 +11,7 @@ uint8_t* generateSequences(BenchmarkParams &bParams, ExperimentParams &xParams) 
     xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.m, xParams.bitsPerPacked)
             * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
     if (xParams.alignSequences)
-        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 8) * 8;
+        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 16) * 16;
     uint8_t* sequences = new uint8_t[(size_t) xParams.d * xParams.bytesPerSequence]();
     getRandomValues(sequences, xParams);
     return sequences;

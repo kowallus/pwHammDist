@@ -151,6 +151,49 @@ inline uint64_t hammingDistance(const uint* x, const uint* y, int length, const 
     return res;
 }
 
+inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length) {
+    int res = length;
+    for (int i = 0; i < length / 16; i++)
+        res -= __builtin_popcountll( (((~(x[i] ^ y[i])) & 0x7777777777777777) + 0x1111111111111111) & 0x8888888888888888 );
+    return res;
+}
+
+inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length, int limit) {
+    int res = 0;
+    for(int i = 0; i < length / 16; i++) {
+        res += 16 - __builtin_popcountll((((~(x[i] ^ y[i])) & 0x7777777777777777) + 0x1111111111111111) & 0x8888888888888888);
+        if (res > limit)
+            return false;
+    }
+    return res;
+}
+
+inline uint64_t hammingDistanceAugmentedNibble(const uint64_t *x, const uint64_t *augY, int length) {
+    int res = length;
+    for (int i = 0; i < length / 16; i++)
+        res -= __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x1111111111111111) & 0x8888888888888888);
+    return res;
+}
+
+inline uint64_t hammingDistanceAugmentedNibble(const uint64_t *x, const uint64_t *augY, int length, int limit) {
+    int res = 0;
+/*    uint64_t lenIgnoreLimit = limit / 8;
+    if (lenIgnoreLimit > length / 16)
+        lenIgnoreLimit = length / 16;
+*/
+    int i = 0;
+/*    for(; i < lenIgnoreLimit; i++)
+        res += 16 - __builtin_popcountll((((~(x[i] ^ augY[i])) ) + 0x1111111111111111) & 0x8888888888888888);
+*/
+    for(; i < length / 16; i++) {
+        res += 16 - __builtin_popcountll((((~(x[i] ^ augY[i])) ) + 0x1111111111111111) & 0x8888888888888888);
+        if (res > limit)
+            return res;
+    }
+    return res;
+}
+
+
 inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length)
 {
     uint64_t res = 0;
