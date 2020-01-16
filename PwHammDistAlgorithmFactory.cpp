@@ -49,7 +49,9 @@ public:
             fprintf(stderr, "Quantization unsupported for binary dataset.\n");
             exit(EXIT_FAILURE);
         } else {
-            PwHammDistAlgorithm* postAlgorithm = BrutePwHammDistAlgorithmFactory<true, true>().getAlgorithmInstance(xParams);
+            PwHammDistAlgorithm* postAlgorithm = (xParams.alphabetSize < 8?
+                    BrutePwHammDistAlgorithmFactory<false, true>().getAlgorithmInstance(xParams):
+                    BrutePwHammDistAlgorithmFactory<false, false>().getAlgorithmInstance(xParams));
             PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new BrutePwHammDistAlgorithmFactory<false>();
             switch(xParams.bytesPerElement) {
                 case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory, postAlgorithm);

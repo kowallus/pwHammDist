@@ -193,6 +193,56 @@ inline uint64_t hammingDistanceAugmentedNibble(const uint64_t *x, const uint64_t
     return res;
 }
 
+inline uint64_t hammingDistanceAugmented8bit(const uint64_t *x, const uint64_t *augY, int length) {
+    int res = length;
+    for (int i = 0; i < length / 8; i++)
+        res -= __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0101010101010101) & 0x8080808080808080);
+    return res;
+}
+
+inline uint64_t hammingDistanceAugmented8bit(const uint64_t *x, const uint64_t *augY, int length, int limit) {
+    int res = 0;
+/*    uint64_t lenIgnoreLimit = limit / 4;
+    if (lenIgnoreLimit > length / 8)
+        lenIgnoreLimit = length / 8;
+*/
+    int i = 0;
+/*    for(; i < lenIgnoreLimit; i++)
+        res += 8 - __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0101010101010101) & 0x8080808080808080);
+*/
+    for(; i < length / 8; i++) {
+        res += 8 - __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0101010101010101) & 0x8080808080808080);
+        if (res > limit)
+            return res;
+    }
+    return res;
+}
+
+
+inline uint64_t hammingDistanceAugmented16bit(const uint64_t *x, const uint64_t *augY, int length) {
+    int res = length;
+    for (int i = 0; i < length / 4; i++)
+        res -= __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0001000100010001) & 0x8000800080008000);
+    return res;
+}
+
+inline uint64_t hammingDistanceAugmented16bit(const uint64_t *x, const uint64_t *augY, int length, int limit) {
+    int res = 0;
+/*    uint64_t lenIgnoreLimit = limit / 2;
+    if (lenIgnoreLimit > length / 4)
+        lenIgnoreLimit = length / 4;
+*/
+    int i = 0;
+/*    for(; i < lenIgnoreLimit; i++)
+        res += 4 - __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0001000100010001) & 0x8000800080008000);
+*/
+    for(; i < length / 4; i++) {
+        res += 4 - __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0001000100010001) & 0x8000800080008000);
+        if (res > limit)
+            return res;
+    }
+    return res;
+}
 
 inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length)
 {
