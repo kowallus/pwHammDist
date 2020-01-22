@@ -11,10 +11,10 @@ PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams) {
 }
 
 
-template<bool naive, bool nibble = false>
+template<bool naive, bool nibble = false, bool grouped = false>
 class BrutePwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
 public:
-    BrutePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string(nibble?"nibble ":"") + string(naive?"naive ":"short-circuit ") + string("brute-force")) {};
+    BrutePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string(nibble?"grouped ":"") + string(nibble?"nibble ":"") + string(naive?"naive ":"short-circuit ") + string("brute-force")) {};
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
         if(xParams.isInBinaryMode())
@@ -29,9 +29,9 @@ public:
             }
         } else {
             switch(xParams.bytesPerElement) {
-                case 1: return new BrutePwHammDistAlgorithm<naive, false, uint8_t>(xParams);
-                case 2: return new BrutePwHammDistAlgorithm<naive, false, uint16_t>(xParams);
-                case 4: return new BrutePwHammDistAlgorithm<naive, false, uint32_t>(xParams);
+                case 1: return new BrutePwHammDistAlgorithm<naive, false, uint8_t, grouped>(xParams);
+                case 2: return new BrutePwHammDistAlgorithm<naive, false, uint16_t, grouped>(xParams);
+                case 4: return new BrutePwHammDistAlgorithm<naive, false, uint32_t, grouped>(xParams);
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
@@ -69,6 +69,10 @@ map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap =
          {SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false>()},
          {QUATIZATION_BASED_FILTER_PWHD_ID, new QuantizationBasedPwHammDistAlgorithmFactory()},
          {NIBBLE_NAIVE_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<true, true>()},
-         {NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false, true>()}
+         {NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false, true>()},
+         {GROUPED_NAIVE_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<true, false, true>()},
+         {GROUPED_SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false, false, true>()},
+         {GROUPED_NIBBLE_NAIVE_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<true, true, true>()},
+         {GROUPED_NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory<false, true, true>()}
          };
 

@@ -5,6 +5,8 @@
 
 const string NIBBLE_NAIVE_BRUTE_FORCE_ID = "nnbf";
 const string NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID = "nsbf";
+const string GROUPED_NIBBLE_NAIVE_BRUTE_FORCE_ID = GROUPED_PREFIX_ID + "nnbf";
+const string GROUPED_NIBBLE_SHORT_CIRCUIT_BRUTE_FORCE_ID = GROUPED_PREFIX_ID + "nsbf";
 
 template <bool naive, typename uint = uint8_t>
 class NibbleBrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
