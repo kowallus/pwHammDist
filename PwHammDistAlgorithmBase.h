@@ -31,7 +31,6 @@ public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
             const vector<pair<uint16_t, uint16_t>> pairs) = 0;
     virtual bool testSequencesSimilarity(const uint8_t* sequences, uint16_t i, uint16_t j) = 0;
-    virtual bool testSequencesSimilarity(const void* seq1, const void* seq2) = 0;
     virtual string getName() = 0;
 };
 
