@@ -114,10 +114,6 @@ public:
         return postAlgorithm->testSequencesSimilarity(sequences, i, j);
     };
 
-    inline bool testSequencesSimilarity(const void* seq1, const void* seq2) {
-        return postAlgorithm->testSequencesSimilarity(seq1, seq2);
-    }
-
     string getName() {
         return QUATIZATION_BASED_FILTER_PWHD_ID + "+" +
             quantizer->getName() + "+" +

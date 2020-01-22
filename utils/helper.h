@@ -125,10 +125,18 @@ string transpose(string matrix, uint64_t rows, uint64_t cols) {
 template<typename uint>
 inline uint64_t hammingDistance(const uint* x, const uint* y, int length) {
     uint64_t res = 0;
-    for (int i = 0; i < length; i++)
+    uint64_t tmp1 = 0;
+    int len2 = (length / 2) * 2;
+    int i = 0;
+    for (; i < len2; i += 2) {
         if (x[i] != y[i])
             res++;
-    return res;
+        if (x[i + 1] != y[i + 1])
+            tmp1++;
+    }
+    if (i < length && x[i] != y[i])
+        res++;
+    return res + tmp1;
 }
 
 template<typename uint>
@@ -136,18 +144,24 @@ inline uint64_t hammingDistance(const uint* x, const uint* y, int length, const 
     uint64_t res = 0;
 
     int i = 0;
-    while(i < length) {
-        int end = i + 1024;
-        if (end > length)
-            end = length;
-        do {
+    const int BLOCK_SIZE = 1024;
+    int blockLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
+    while(i < blockLength) {
+        uint64_t tmp1 = 0;
+        for(int end = i + BLOCK_SIZE; i < end; i += 2) {
             if (x[i] != y[i])
                 res++;
-        } while (++i < end);
+            if (x[i + 1] != y[i + 1])
+                tmp1++;
+        }
+        res += tmp1;
         if (res > limit)
             return res;
     }
-
+    for(; i < length; i++) {
+        if (x[i] != y[i])
+            res++;
+    }
     return res;
 }
 
