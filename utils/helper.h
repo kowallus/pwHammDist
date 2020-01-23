@@ -184,23 +184,22 @@ inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int 
 
 inline uint64_t hammingDistanceAugmentedNibble(const uint64_t *x, const uint64_t *augY, int length) {
     int res = length;
-    for (int i = 0; i < length / 16; i++)
+    for (int i = 0; i < length / 16; i += 4) {
         res -= __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 1] ^ augY[i + 1]))) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 2] ^ augY[i + 2]))) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 3] ^ augY[i + 3]))) + 0x1111111111111111) & 0x8888888888888888);
+    }
     return res;
 }
 
 inline uint64_t hammingDistanceAugmentedNibble(const uint64_t *x, const uint64_t *augY, int length, int limit) {
     int res = 0;
-/*    uint64_t lenIgnoreLimit = limit / 8;
-    if (lenIgnoreLimit > length / 16)
-        lenIgnoreLimit = length / 16;
-*/
-    int i = 0;
-/*    for(; i < lenIgnoreLimit; i++)
-        res += 16 - __builtin_popcountll((((~(x[i] ^ augY[i])) ) + 0x1111111111111111) & 0x8888888888888888);
-*/
-    for(; i < length / 16; i++) {
-        res += 16 - __builtin_popcountll((((~(x[i] ^ augY[i])) ) + 0x1111111111111111) & 0x8888888888888888);
+    for(int i = 0; i < length / 16; i += 4) {
+        res += 64 - __builtin_popcountll((((~(x[i] ^ augY[i])) ) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 1] ^ augY[i + 1]))) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 2] ^ augY[i + 2]))) + 0x1111111111111111) & 0x8888888888888888);
+        res -= __builtin_popcountll((((~(x[i + 3] ^ augY[i + 3]))) + 0x1111111111111111) & 0x8888888888888888);
         if (res > limit)
             return res;
     }
@@ -261,31 +260,26 @@ inline uint64_t hammingDistanceAugmented16bit(const uint64_t *x, const uint64_t 
 inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length)
 {
     uint64_t res = 0;
-
-    for (int i = 0; i < length; i++)
+    for (int i = 0; i < length; i += 4) {
         res += __builtin_popcountll(x[i] ^ y[i]);
-
+        res += __builtin_popcountll(x[i + 1] ^ y[i + 1]);
+        res += __builtin_popcountll(x[i + 2] ^ y[i + 2]);
+        res += __builtin_popcountll(x[i + 3] ^ y[i + 3]);
+    }
     return res;
 }
 
 inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int length, int limit)
 {
     uint64_t res = 0;
-
-    uint64_t lenIgnoreLimit = limit / 32;
-    if (lenIgnoreLimit > length)
-        lenIgnoreLimit = length;
-
-    int i = 0;
-    for (; i < lenIgnoreLimit; i++)
+    for (int i = 0; i < length; i += 4) {
         res += __builtin_popcountll(x[i] ^ y[i]);
-
-    for (; i < length; i++) {
-        res += __builtin_popcountll(x[i] ^ y[i]);
+        res += __builtin_popcountll(x[i + 1] ^ y[i + 1]);
+        res += __builtin_popcountll(x[i + 2] ^ y[i + 2]);
+        res += __builtin_popcountll(x[i + 3] ^ y[i + 3]);
         if (res > limit)
             return res;
     }
-
     return res;
 }
 
