@@ -3,7 +3,7 @@
 PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams) {
     auto typeIt = pwHammDistAlgorithmTypesMap.find(xParams.algorithmID);
     if (typeIt == pwHammDistAlgorithmTypesMap.end()) {
-        fprintf(stderr, "Invalid method type: %s\n", typeIt->second->getAlgorithmName().c_str());
+        fprintf(stderr, "Invalid method type ID: %s\n", xParams.algorithmID.c_str());
         exit(EXIT_FAILURE);
     }
 
@@ -21,8 +21,8 @@ public:
             return new BrutePwHammDistAlgorithm<shortcircuit, true>(xParams);
         else if (nibble) {
             switch(xParams.bytesPerElement) {
-                case 1: return new NibbleBrutePwHammDistAlgorithm<shortcircuit, uint8_t>(xParams);
-                case 2: return new NibbleBrutePwHammDistAlgorithm<shortcircuit, uint16_t>(xParams);
+                case 1: return new NibbleBrutePwHammDistAlgorithm<!shortcircuit, uint8_t>(xParams);
+                case 2: return new NibbleBrutePwHammDistAlgorithm<!shortcircuit, uint16_t>(xParams);
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);

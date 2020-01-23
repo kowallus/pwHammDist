@@ -110,10 +110,6 @@ public:
         return postAlgorithm->findSimilarSequences(sequences, pairs);
     }
 
-    inline bool testSequencesSimilarity(const uint8_t* sequences, uint16_t i, uint16_t j) {
-        return postAlgorithm->testSequencesSimilarity(sequences, i, j);
-    };
-
     string getName() {
         return QUATIZATION_BASED_FILTER_PWHD_ID + "+" +
             quantizer->getName() + "+" +
