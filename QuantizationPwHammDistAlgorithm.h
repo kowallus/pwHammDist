@@ -16,15 +16,11 @@ protected:
     virtual void quantizeSequence(uint8_t* dest, uint* src) = 0;
 
 public:
-    BinaryQuantizer() {
-        qxParams.enableBinaryMode();
-    }
+    BinaryQuantizer() {}
 
     void quantize(const uint8_t* sequences, ExperimentParams &xParams) {
-        qxParams.m = xParams.m;
-        qxParams.d = xParams.d;
-        qxParams.k = xParams.k;
-        qxParams.shortCircuitMode = xParams.shortCircuitMode;
+        qxParams = xParams;
+        qxParams.enableBinaryMode();
         qxParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(qxParams.m, qxParams.bitsPerPacked)
                                    * ceilDivisionBySmallInteger(qxParams.bitsPerPacked, 8);
         if (qxParams.alignSequencesTo256bits)

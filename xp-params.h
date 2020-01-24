@@ -30,8 +30,8 @@ struct ExperimentParams {
 
     bool verbose = true;
 
-    const uint8_t DISABLE_BITS_PER_PACKED = UINT8_MAX;
-    const uint16_t DISABLE_ONES_IN_PROMILES = UINT16_MAX;
+    static const uint8_t DISABLE_BITS_PER_PACKED = UINT8_MAX;
+    static const uint16_t DISABLE_ONES_IN_PROMILES = UINT16_MAX;
 
     uint8_t bitsPerPacked = DISABLE_BITS_PER_PACKED; //bits in packed value
     uint16_t onesInPromiles = DISABLE_ONES_IN_PROMILES; // density of 1 bits in sequences (in promiles)
@@ -63,7 +63,6 @@ struct ExperimentParams {
     void enableDatasetMode() {
         datasetMode = true;
     }
-
 };
 
 #endif //PWHD_XP_PARAMS_H

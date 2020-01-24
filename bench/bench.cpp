@@ -48,7 +48,7 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
     }
     logResults(algorithm, bParams, xParams, times);
 
-    cout << std::endl << "check: " << (brute / bParams.repeats) << std::endl;
+    if (bParams.verbose) cout << std::endl << "check: " << (brute / bParams.repeats) << std::endl;
     if (bParams.verification) {
         verifyAlgorithmResult(sequences, algorithm, xParams);
     }
