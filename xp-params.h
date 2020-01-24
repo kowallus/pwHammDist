@@ -12,12 +12,13 @@ struct ExperimentParams {
     std::string datasetFileName;
     bool binaryMode = false;
 
-    bool alignSequences = true;
+    bool alignSequencesTo256bits = true;
+    static const int ALINGMENT_IN_BYTES = 32;
 
     uint16_t m = 0; // sequence length
     uint16_t d = 0; // no of sequences
     uint16_t k = 0; // max hamming length
-    std::string algorithmID = "nbf";
+    std::string algorithmID = "bf";
 
     // extra params
 

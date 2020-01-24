@@ -197,7 +197,7 @@ private:
 
 public:
     BrutePwHammDistAlgorithm(ExperimentParams &xParams): PwHammDistAlgorithm(xParams), seqInULLs(xParams.bytesPerSequence / 8) {
-        if (xParams.bytesPerSequence != seqInULLs * 8) {
+        if (xParams.bytesPerSequence % xParams.ALINGMENT_IN_BYTES != 0) {
             fprintf(stderr, "ERROR: brute algorithm does not support unaligned data.\n");
             exit(EXIT_FAILURE);
         }

@@ -23,7 +23,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 xParams.algorithmID = std::string(optarg);
                 break;
             case 'A':
-                xParams.alignSequences = false;
+                xParams.alignSequencesTo256bits = false;
                 break;
             case 'q':
                 bParams.verbose = false;

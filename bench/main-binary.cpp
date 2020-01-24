@@ -10,8 +10,9 @@ uint8_t* generateSequences(BenchmarkParams &bParams, ExperimentParams &xParams) 
     if (bParams.verbose) cout << "Generation of data..." << std::endl;
     xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.m, xParams.bitsPerPacked)
             * ceilDivisionBySmallInteger(xParams.bitsPerPacked, 8);
-    if (xParams.alignSequences)
-        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence, 16) * 16;
+    if (xParams.alignSequencesTo256bits)
+        xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence,
+                ExperimentParams::ALINGMENT_IN_BYTES) * ExperimentParams::ALINGMENT_IN_BYTES;
     uint8_t* sequences = new uint8_t[(size_t) xParams.d * xParams.bytesPerSequence]();
     getRandomValues(sequences, xParams);
     return sequences;

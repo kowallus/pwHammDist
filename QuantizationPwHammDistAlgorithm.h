@@ -26,8 +26,9 @@ public:
         qxParams.k = xParams.k;
         qxParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(qxParams.m, qxParams.bitsPerPacked)
                                    * ceilDivisionBySmallInteger(qxParams.bitsPerPacked, 8);
-        if (qxParams.alignSequences)
-            qxParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(qxParams.bytesPerSequence, 8) * 8;
+        if (qxParams.alignSequencesTo256bits)
+            qxParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(qxParams.bytesPerSequence,
+                    ExperimentParams::ALINGMENT_IN_BYTES) * ExperimentParams::ALINGMENT_IN_BYTES;
         qSequences = new uint8_t[(size_t) qxParams.d * qxParams.bytesPerSequence]();
         uint8_t* qCur;
         for(uint16_t i = 0; i < qxParams.d; i++) {

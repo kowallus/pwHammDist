@@ -52,7 +52,7 @@ public:
             PwHammDistAlgorithm* postAlgorithm = (xParams.alphabetSize < 8?
                     BrutePwHammDistAlgorithmFactory<true, true>().getAlgorithmInstance(xParams):
                     BrutePwHammDistAlgorithmFactory<true, false>().getAlgorithmInstance(xParams));
-            PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new BrutePwHammDistAlgorithmFactory<false>();
+            PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new BrutePwHammDistAlgorithmFactory<true>();
             switch(xParams.bytesPerElement) {
                 case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory, postAlgorithm);
                 case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(xParams, new SimpleBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory, postAlgorithm);
