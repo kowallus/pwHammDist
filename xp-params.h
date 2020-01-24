@@ -18,9 +18,17 @@ struct ExperimentParams {
     uint16_t m = 0; // sequence length
     uint16_t d = 0; // no of sequences
     uint16_t k = 0; // max hamming length
+
     std::string algorithmID = "bf";
+    bool shortCircuitMode = true;
+    bool nibblesMode = false;
+    bool groupedBFMode = false;
+    bool pivotsFilterMode = false;
+    bool pivotsElectionMode = false;
 
     // extra params
+
+    bool verbose = true;
 
     const uint8_t DISABLE_BITS_PER_PACKED = UINT8_MAX;
     const uint16_t DISABLE_ONES_IN_PROMILES = UINT16_MAX;

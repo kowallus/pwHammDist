@@ -24,6 +24,7 @@ public:
         qxParams.m = xParams.m;
         qxParams.d = xParams.d;
         qxParams.k = xParams.k;
+        qxParams.shortCircuitMode = xParams.shortCircuitMode;
         qxParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(qxParams.m, qxParams.bitsPerPacked)
                                    * ceilDivisionBySmallInteger(qxParams.bitsPerPacked, 8);
         if (qxParams.alignSequencesTo256bits)
@@ -96,12 +97,12 @@ public:
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
-        cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
+        if (xParams.verbose) cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
         quantizer->quantize(sequences, xParams);
-        cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
+        if (xParams.verbose) cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
         qAlgorithm = quantizedFilterAlgorithmFactory->getAlgorithmInstance(quantizer->getQxParams());
         auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences());
-        cout << "filterCheck: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
+        if (xParams.verbose) cout << "filterCheck: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
         vector<pair<uint16_t, uint16_t>> res = postAlgorithm->findSimilarSequences(sequences, qRes);
         return res;
     };

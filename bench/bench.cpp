@@ -6,10 +6,10 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
 void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
 
 void verifyAlgorithmResult(const uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
-    if (xParams.algorithmID != NAIVE_BRUTE_FORCE_ID) {
+    if (xParams.algorithmID != BRUTE_FORCE_ID) {
             cout << "Verification... " << endl;
             auto res = algorithm->findSimilarSequences(sequences);
-            xParams.algorithmID == NAIVE_BRUTE_FORCE_ID;
+            xParams.algorithmID == BRUTE_FORCE_ID;
             PwHammDistAlgorithm *const modelAlgorithm = getPwHammDistAlgorithmInstance(xParams);
             auto modelRes = modelAlgorithm->findSimilarSequences(sequences);
             delete(modelAlgorithm);

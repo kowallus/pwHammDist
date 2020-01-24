@@ -8,17 +8,12 @@
 
 using namespace std;
 
-const string NAIVE_BRUTE_FORCE_ID = "bf";
-const string SHORT_CIRCUIT_BRUTE_FORCE_ID = "sbf";
+const string BRUTE_FORCE_ID = "bf";
+const string SHORT_CIRCUIT_PREFIX_ID = "s";
 const string GROUPED_PREFIX_ID = "g";
-const string GROUPED_NAIVE_BRUTE_FORCE_ID = GROUPED_PREFIX_ID + NAIVE_BRUTE_FORCE_ID;
-const string GROUPED_SHORT_CIRCUIT_BRUTE_FORCE_ID = GROUPED_PREFIX_ID + SHORT_CIRCUIT_BRUTE_FORCE_ID;
-const string BINARY_MODE_ID_SUFFIX = "_bin";
 const string PIVOT_FILTER_PREFIX_ID = "p";
-const string PIVOT_FILTER_ID = PIVOT_FILTER_PREFIX_ID + NAIVE_BRUTE_FORCE_ID;
-const string SHORT_CIRCUIT_PIVOT_FILTER_ID = PIVOT_FILTER_PREFIX_ID + SHORT_CIRCUIT_BRUTE_FORCE_ID;
-const string GROUPED_PIVOT_FILTER_ID = PIVOT_FILTER_PREFIX_ID + GROUPED_NAIVE_BRUTE_FORCE_ID;
-const string GROUPED_SHORT_CIRCUIT_PIVOT_FILTER_ID = PIVOT_FILTER_PREFIX_ID + GROUPED_SHORT_CIRCUIT_BRUTE_FORCE_ID;
+const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
+const string BINARY_MODE_ID_SUFFIX = "_bin";
 
 
 class PwHammDistAlgorithm {
@@ -47,12 +42,24 @@ template <bool shortcircuit, bool binaryAlphabet, typename uint = uint8_t, bool 
 class BrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
-    static const uint8_t PIVOTS_COUNT = 6;
-    uint16_t pivots[PIVOTS_COUNT];
+    static const uint8_t PIVOTS_COUNT_MAX = 6;
+    uint8_t pivotsCount = PIVOTS_COUNT_MAX;
+    uint16_t pivots[PIVOTS_COUNT_MAX];
     uint16_t* pivotDist = 0;
 
     // for debugging
     uint8_t* sequencesPtr;
+
+    void preprocessing(const uint8_t *sequences) {
+        if (pivot) {
+            if (xParams.verbose) cout << "pivots: ";
+            if (xParams.pivotsElectionMode)
+                electAndCalculateDistancesToPivots(sequences);
+            else
+                calculateDistancesToPivots(sequences);
+            if (xParams.verbose) cout << endl;
+        }
+    }
 
     template<bool allowShortCircuit>
     uint16_t findSequencesDistance(const void* seq1, const void* seq2) {
@@ -67,21 +74,18 @@ private:
     }
 
     void calculateDistancesToPivots(const uint8_t *sequences) {
-        for(int p = 0; p < PIVOTS_COUNT; p++) {
-            //pivots[p] = ((int) xParams.d) * p / PIVOTS_COUNT;
-            pivots[p] = p;
-            cout << pivots[p] << "\t";
-        }
-        cout << endl;
+        uint16_t candidate = 0;
         if (pivotDist)
             delete[] pivotDist;
-        pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT];
+        pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT_MAX];
         uint16_t* ptr = pivotDist;
-        for(int p = 0; p < PIVOTS_COUNT; p++) {
-            if (pivots[p] >= xParams.d) {
-                fprintf(stderr, "ERROR: invalid sequence %u pivot (max: %u).\n", pivots[p], xParams.d - 1);
-                exit(EXIT_FAILURE);
+        for(int p = 0; p < pivotsCount; p++) {
+            if (candidate >= xParams.d) {
+                pivotsCount = p;
+                break;
             }
+            pivots[p] = candidate;
+            if (xParams.verbose) cout << candidate << "\t";
             uint8_t* x = (uint8_t*) sequences + (size_t) pivots[p] * xParams.bytesPerSequence;
             uint8_t* y = (uint8_t*) sequences;
             for(int j = 0; j < xParams.d; j++) {
@@ -89,6 +93,7 @@ private:
                 y += xParams.bytesPerSequence;
             }
             ptr += xParams.d;
+            candidate++;
         }
     }
 
@@ -96,15 +101,15 @@ private:
         uint16_t candidate = 0;
         if (pivotDist)
             delete[] pivotDist;
-        pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT];
+        pivotDist = new uint16_t[xParams.d * pivotsCount];
         uint16_t minPivotDist[xParams.d];
         memset(&minPivotDist, UINT8_MAX, sizeof(minPivotDist));
         const uint16_t minThreshold = xParams.k;
         uint32_t sumPivotDist[xParams.d] = { 0 };
         uint16_t* ptr = pivotDist;
-        for(int p = 0; p < PIVOTS_COUNT; p++) {
+        for(int p = 0; p < pivotsCount; p++) {
             pivots[p] = candidate;
-            cout << pivots[p] << "\t";
+            if (xParams.verbose) cout << pivots[p] << "\t";
             uint32_t maxSumDist = 0;
             uint8_t* x = (uint8_t*) sequences + (size_t) pivots[p] * xParams.bytesPerSequence;
             uint8_t* y = (uint8_t*) sequences;
@@ -121,15 +126,18 @@ private:
                     }
                 }
             }
+            if (pivots[p] == candidate) {
+                pivotsCount = p + 1;
+                break;
+            }
             ptr += xParams.d;
         }
-        cout << endl;
     }
 
     enum filterResult { similar, inconclusive, different };
 
     filterResult pivotFilter(uint16_t i, uint16_t j) {
-        for(int p = 0; p < PIVOTS_COUNT; p++) {
+        for(int p = 0; p < pivotsCount; p++) {
             const int iDist = pivotDist[p * xParams.d + i];
             const int jDist = pivotDist[p * xParams.d + j];
             if (abs(iDist - jDist) > xParams.k)
@@ -209,8 +217,7 @@ public:
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
-        if (pivot)
-            calculateDistancesToPivots(sequences);
+        preprocessing(sequences);
         if (grouped)
             return findSimilarSequencesUsingGroupedApproach(sequences);
         else
@@ -219,8 +226,7 @@ public:
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
-        if (pivot)
-            calculateDistancesToPivots(sequences);
+        preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
         for (pair<uint16_t, uint16_t> pair: pairs) {
             if (testSequencesSimilarity(sequences, pair.first, pair.second)) {
@@ -247,7 +253,11 @@ public:
         return findSequencesDistance<true>(seq1, seq2) <= xParams.k;
     }
 
-    string getName() { return (pivot?PIVOT_FILTER_PREFIX_ID:"") + (grouped?GROUPED_PREFIX_ID:"") + (shortcircuit?SHORT_CIRCUIT_BRUTE_FORCE_ID:NAIVE_BRUTE_FORCE_ID) + (binaryAlphabet?BINARY_MODE_ID_SUFFIX:""); }
+    string getName() {
+        return (pivot?(xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") + (grouped?GROUPED_PREFIX_ID:"") +
+            (shortcircuit?SHORT_CIRCUIT_PREFIX_ID:"") + BRUTE_FORCE_ID +
+            (binaryAlphabet?BINARY_MODE_ID_SUFFIX:"");
+    }
 };
 
 #endif //ALGORITHM_BASE_H

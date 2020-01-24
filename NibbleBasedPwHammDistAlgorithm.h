@@ -43,7 +43,7 @@ private:
                 fprintf(stderr, "ERROR: unsupported alphabet size for nibblification.\n");
                 exit(EXIT_FAILURE);
         }
-        cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
+        if (xParams.verbose) cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
         return nibbles;
     }
 
