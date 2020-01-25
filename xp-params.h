@@ -55,6 +55,7 @@ struct ExperimentParams {
 
     void enableBinaryMode() {
         binaryMode = true;
+        nibblesMode = false;
         alphabetSize = 2;
         enableOnesInPromiles();
         enableBitsPerPacked();

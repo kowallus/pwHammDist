@@ -2,7 +2,6 @@
 #define PWHD_ALGORITHMFACTORY_H
 
 #include "QuantizationPwHammDistAlgorithm.h"
-#include "NibbleBasedPwHammDistAlgorithm.h"
 #include "xp-params.h"
 #include <map>
 
@@ -16,11 +15,12 @@ private:
     static const int BINARY_DISPATCH_BIT = 1;
     static const int GROUPED_DISPATCH_BIT = 2;
     static const int PIVOT_DISPATCH_BIT = 3;
-    static const int DISPATCH_ENCODED_PARAMS_MAX = 16;
+    static const int NIBBLE_DISPATCH_BIT = 4;
+    static const int DISPATCH_ENCODED_PARAMS_MAX = 32;
 
-    template <bool shortcircuit, bool binaryAlphabet, typename uint, bool grouped, bool pivot>
+    template <bool shortcircuit, bool binaryAlphabet, typename uint, bool grouped, bool pivot, bool nibble>
     static PwHammDistAlgorithm* getBrutePwHammAlgorithmInstanceTemplate(ExperimentParams &xParams) {
-        return new BrutePwHammDistAlgorithm<shortcircuit, binaryAlphabet, uint, grouped, pivot>(xParams);
+        return new BrutePwHammDistAlgorithm<shortcircuit, binaryAlphabet, uint, grouped, pivot, nibble>(xParams);
     }
 
     template<typename uint, std::size_t...Is>
@@ -31,23 +31,19 @@ private:
                      (Is >> BINARY_DISPATCH_BIT) & 1,
                      uint,
                      (Is >> GROUPED_DISPATCH_BIT) & 1,
-                     (Is >> PIVOT_DISPATCH_BIT) & 1>...};
+                     (Is >> PIVOT_DISPATCH_BIT) & 1,
+                     (Is >> NIBBLE_DISPATCH_BIT) & 1>...};
         return fs[encodedParams](xParams);
     }
 
     template<typename uint>
     PwHammDistAlgorithm* runtimeDispatchAlgorithmInstance(ExperimentParams &xParams) {
-        if (xParams.nibblesMode) {
-            if (xParams.shortCircuitMode)
-                return new NibbleBrutePwHammDistAlgorithm<true, uint>(xParams);
-            else
-                return new NibbleBrutePwHammDistAlgorithm<false, uint>(xParams);
-        }
         int encodedParams =
             xParams.shortCircuitMode << SHORTCIRCUIT_DISPATCH_BIT |
             xParams.binaryMode << BINARY_DISPATCH_BIT |
             xParams.groupedBFMode << GROUPED_DISPATCH_BIT |
-            xParams.pivotsFilterMode << PIVOT_DISPATCH_BIT;
+            xParams.pivotsFilterMode << PIVOT_DISPATCH_BIT |
+            xParams.nibblesMode << NIBBLE_DISPATCH_BIT;
         return runtimeDispatchAlgorithmInstance<uint>(xParams, encodedParams, std::make_index_sequence<DISPATCH_ENCODED_PARAMS_MAX>());
     }
 
