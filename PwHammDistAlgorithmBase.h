@@ -91,12 +91,12 @@ private:
             if (nibble) {
                 if (sizeof(uint) == sizeof(uint8_t)) {
                     assert(xParams.alphabetSize <= 8);
-                    dist = shortcircuit? hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
+                    dist = (allowShortCircuit && shortcircuit)? hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
                                                           xParams.bytesPerSequence * 2, xParams.k):
                                         hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
                                                           xParams.bytesPerSequence * 2);
                 } else if (sizeof(uint) == sizeof(uint16_t)) {
-                    dist = shortcircuit? hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
+                    dist = (allowShortCircuit && shortcircuit)? hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
                                                                  xParams.bytesPerSequence / 2, xParams.k):
                                         hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
                                                                  xParams.bytesPerSequence / 2);
