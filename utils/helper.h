@@ -142,9 +142,50 @@ inline uint64_t hammingDistance(const uint* x, const uint* y, int length) {
 template<typename uint>
 inline uint64_t hammingDistance(const uint* x, const uint* y, int length, const int limit) {
     uint64_t res = 0;
+    int i = 0;
+
+    int skipLen = ceilDivisionBySmallInteger(limit * 2, 32) * 32;
+    if (skipLen > length)
+        skipLen = length;
+    uint64_t tmp1 = 0;
+    for(; i < skipLen; i += 2) {
+        if (x[i] != y[i])
+            res++;
+        if (x[i + 1] != y[i + 1])
+            tmp1++;
+    }
+    res += tmp1;
+    if (res > limit)
+        return res;
+    int blockSize = res?(ceilDivisionBySmallInteger((skipLen*(limit+1-res)/res), 16) * 16):1024;
+    if (blockSize > 1024)
+        blockSize = 1024;
+    int blockLength = skipLen + ((length-skipLen) / blockSize) * blockSize;
+    while(i < blockLength) {
+        uint64_t tmp1 = 0;
+        for(int end = i + blockSize; i < end; i += 2) {
+            if (x[i] != y[i])
+                res++;
+            if (x[i + 1] != y[i + 1])
+                tmp1++;
+        }
+        res += tmp1;
+        if (res > limit)
+            return res;
+    }
+    for(; i < length; i++) {
+        if (x[i] != y[i])
+            res++;
+    }
+    return res;
+}
+
+template<typename uint>
+inline uint64_t hammingDistanceSimpleShortcircuit(const uint* x, const uint* y, int length, const int limit) {
+    uint64_t res = 0;
 
     int i = 0;
-    const int BLOCK_SIZE = 1024;
+    const int BLOCK_SIZE = 64;
     int blockLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
     while(i < blockLength) {
         uint64_t tmp1 = 0;
@@ -177,7 +218,7 @@ inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int 
     for(int i = 0; i < length / 16; i++) {
         res += 16 - __builtin_popcountll((((~(x[i] ^ y[i])) & 0x7777777777777777) + 0x1111111111111111) & 0x8888888888888888);
         if (res > limit)
-            return false;
+            return res;
     }
     return res;
 }
