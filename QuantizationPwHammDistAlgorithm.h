@@ -57,8 +57,12 @@ protected:
     inline void quantizeSequence(uint8_t* dest, uint* src) {
         uint16_t j = 0;
         while(j < this->qxParams.m) {
-            for(uint8_t b = 0; b < 8; b++)
-                *dest += (src[j++] & 1) << b;
+            for(uint8_t b = 0; b < 8; b += 4, j += 4) {
+                *dest += (src[j] & 1) << b;
+                *dest += (src[j + 1] & 1) << (b + 1);
+                *dest += (src[j + 2] & 1) << (b + 2);
+                *dest += (src[j + 3] & 1) << (b + 3);
+            }
             ++dest;
         }
     }
@@ -67,7 +71,30 @@ public:
     SimpleBinaryQuantizer<uint>(): BinaryQuantizer<uint>() {};
 
     string getName() { return SIMPLE_BINARY_QUANTIZER_ID; };
+};
 
+template<typename uint>
+class BitShiftBinaryQuantizer: public BinaryQuantizer<uint> {
+protected:
+    inline void quantizeSequence(uint8_t* dest, uint* src) {
+        uint64_t* srcPtr64 = (uint64_t*)src;
+        uint64_t* tmp = (uint64_t*) dest;
+        int end = this->qxParams.m / 64;
+        if(sizeof(uint) == sizeof(uint16_t)) {
+            for(int j = 0; j < end; j++, tmp++) {
+                for(int shift = 0; shift < 16; ++shift)
+                    *tmp = ((*tmp) << 1) + ((*srcPtr64++) & 0x0001000100010001);
+            }
+            end = (this->qxParams.m - end * 64) / 4;
+            for(int shift = 0; shift < end; ++shift)
+                *tmp = ((*tmp) << 1) + ((*srcPtr64++) & 0x0001000100010001);
+        }
+    }
+
+public:
+    BitShiftBinaryQuantizer<uint>(): BinaryQuantizer<uint>() {};
+
+    string getName() { return SIMPLE_BINARY_QUANTIZER_ID; };
 };
 
 template<typename uint>
