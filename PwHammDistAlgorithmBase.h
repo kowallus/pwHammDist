@@ -9,9 +9,9 @@
 using namespace std;
 
 const string BRUTE_FORCE_ID = "bf";
-const string SHORT_CIRCUIT_PREFIX_ID = "s";
+const string NO_SHORT_CIRCUIT_PREFIX_ID = "n";
 const string GROUPED_PREFIX_ID = "g";
-const string NIBBLIFICATION_PREFIX_ID = "n";
+const string COMPACT_PREFIX_ID = "c";
 const string PIVOT_FILTER_PREFIX_ID = "p";
 const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
@@ -39,8 +39,7 @@ public:
     virtual PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) = 0;
 };
 
-template <bool shortcircuit, bool binaryAlphabet, typename uint = uint8_t,
-        bool grouped = false, bool pivot = false, bool nibble = false>
+template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact = false>
 class BrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
@@ -55,17 +54,17 @@ private:
     uint16_t* pivotDist = 0;
     uint8_t ctrlPivot = 0;
 
-    // nibble mode
-    uint8_t* nibbles = 0;
+    // nibble and compact mode
+    uint8_t* seqAugmention = 0;
 
     void preprocessing(const uint8_t *sequences) {
-        if (nibble) {
-            nibblify(sequences);
+        if (compact) {
+            compactation(sequences);
         } else {
             seq1 = (uint8_t*) sequences;
             seq2 = (uint8_t*) sequences;
         }
-        if (pivot) {
+        if (xParams.pivotsFilterMode) {
             if (xParams.verbose) cout << "pivots: ";
             if (xParams.pivotsElectionMode)
                 electAndCalculateDistancesToPivots();
@@ -76,8 +75,8 @@ private:
     }
 
     void postprocessing() {
-        if (nibble) {
-            denibblify();
+        if (compact) {
+            decompactation();
         }
     }
 
@@ -89,7 +88,7 @@ private:
             dist = (allowShortCircuit && shortcircuit)?hammingDistanceBinary((uint64_t*) seq1, (uint64_t*) seq2, seqInULLs, xParams.k):
                    hammingDistanceBinary((uint64_t*) seq1, (uint64_t*)seq2, seqInULLs);
         else {
-            if (nibble) {
+            if (compact) {
                 if (sizeof(uint) == sizeof(uint8_t)) {
                     assert(xParams.alphabetSize <= 8);
                     dist = (allowShortCircuit && shortcircuit)? hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
@@ -111,42 +110,42 @@ private:
         return dist;
     }
 
-    void nibblify(const uint8_t* sequences) {
-        if (nibbles)
-            delete[] nibbles;
+    void compactation(const uint8_t *sequences) {
+        if (seqAugmention)
+            delete[] seqAugmention;
         if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8) {
             xParams.bytesPerSequence /= 2;
-            nibbles = new uint8_t[xParams.d * xParams.bytesPerSequence * 2]();
+            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence * 2]();
             uint8_t* x = (uint8_t*) sequences;
-            uint8_t *y = nibbles;
-            uint8_t *z = nibbles + xParams.d * xParams.bytesPerSequence;
+            uint8_t *y = seqAugmention;
+            uint8_t *z = seqAugmention + xParams.d * xParams.bytesPerSequence;
             const uint32_t nibblePackedBytes = xParams.d * xParams.bytesPerSequence;
             for(int i = 0; i < nibblePackedBytes; i++) {
                 *y = *(x++);
                 *y += *(x++)*16;
                 *(z++) = *(y++) + 128 + 8;
             }
-            seq1 = nibbles;
-            seq2 = nibbles + xParams.d * xParams.bytesPerSequence;
+            seq1 = seqAugmention;
+            seq2 = seqAugmention + xParams.d * xParams.bytesPerSequence;
             if (xParams.verbose) cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
         } else if (sizeof(uint) == sizeof(uint16_t)) {
-            nibbles = new uint8_t[xParams.d * xParams.bytesPerSequence]();
+            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence]();
             uint16_t* x = (uint16_t*) sequences;
-            uint16_t* z = (uint16_t*) nibbles;
+            uint16_t* z = (uint16_t*) seqAugmention;
             const uint32_t length = xParams.d * xParams.bytesPerSequence / 2;
             for(int i = 0; i < length; i++) {
                 *(z++) = *(x++) + 32768;
             }
             seq1 = (uint8_t*) sequences;
-            seq2 = nibbles;
-            if (xParams.verbose) cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
+            seq2 = seqAugmention;
+            if (xParams.verbose) cout << "augmented... " << " (" << time_millis() << " msec)" << endl;
         } else {
             fprintf(stderr, "ERROR: unsupported alphabet size for nibblification.\n");
             exit(EXIT_FAILURE);
         }
     }
 
-    void denibblify() {
+    void decompactation() {
         if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8)
             xParams.bytesPerSequence *= 2;
     }
@@ -256,13 +255,27 @@ private:
         vector<pair<uint16_t, uint16_t>> res;
         for(int ri = 0; ri < xParams.d - 1; ri++) {
             int rj = ri + 1;
-            int i = pivotRank[ri];
-            const int iDist = ctrlPivotDist[i];
-            while (rj < xParams.d && iDist + ctrlPivotDist[pivotRank[rj]] <= xParams.k)
+            const int i = pivotRank[ri];
+            uint16_t iDist[PIVOTS_COUNT_MAX];
+            for(int p = 0; p < pivotsCount; p++)
+                iDist[p] = pivotDist[p * xParams.d + i];
+            while (rj < xParams.d && iDist[ctrlPivot] + ctrlPivotDist[pivotRank[rj]] <= xParams.k)
                 res.push_back(pair<uint16_t, uint16_t>(i, pivotRank[rj++]));
-            while (rj < xParams.d && ctrlPivotDist[pivotRank[rj]] - iDist <= xParams.k) {
-                if (testSequencesSimilarity(i, pivotRank[rj]))
-                    res.push_back(pair<uint16_t, uint16_t>(i, pivotRank[rj]));
+            while (rj < xParams.d && ctrlPivotDist[pivotRank[rj]] - iDist[ctrlPivot] <= xParams.k) {
+                const int j = pivotRank[rj];
+                filterResult filterRes = inconclusive;
+                for(int p = 0; p < pivotsCount; p++) {
+                    const int jDist = pivotDist[p * xParams.d + j];
+                    if (abs(iDist[p] - jDist) > xParams.k) {
+                        filterRes = different;
+                        break;
+                    } if (iDist[p] + jDist <= xParams.k) {
+                        filterRes = similar;
+                        break;
+                    }
+                }
+                if (filterRes == similar || (filterRes == inconclusive && testSequencesSimilarity<false>(i, j)))
+                    res.push_back(pair<uint16_t, uint16_t>(i, j));
                 rj++;
             }
         }
@@ -274,7 +287,7 @@ private:
         vector<pair<uint16_t, uint16_t>> res;
         for(int i = 0; i < xParams.d - 1; i++) {
             for (int j = i + 1; j < xParams.d; j++) {
-                if (testSequencesSimilarity(i, j)) {
+                if (testSequencesSimilarity<false>(i, j)) {
                     res.push_back(pair<uint16_t, uint16_t>(i, j));
                 }
             }
@@ -282,6 +295,7 @@ private:
         return res;
     };
 
+    template<bool usePivotFilter>
     vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingGroupedApproach() {
         vector<pair<uint16_t, uint16_t>> res;
         const int GROUP_SIZE = 32;
@@ -290,7 +304,7 @@ private:
             for (int gStart = 0; gStart < gEnd; gStart += GROUP_SIZE) {
                 for (int i = 0; i < GROUP_SIZE; i++) {
                     for (int j = i + 1; j < GROUP_SIZE; j++) {
-                        if (testSequencesSimilarity(gStart + i, gStart + j)) {
+                        if (testSequencesSimilarity<usePivotFilter>(gStart + i, gStart + j)) {
                             res.push_back(pair<uint16_t, uint16_t>(gStart + i, gStart + j));
                         }
                     }
@@ -302,7 +316,7 @@ private:
                 for (int g2Start = g1Start + GROUP_SIZE; g2Start < gEnd; g2Start += GROUP_SIZE) {
                     for (int i = 0; i < GROUP_SIZE; i++) {
                         for (int j = 0; j < GROUP_SIZE; j++) {
-                            if (testSequencesSimilarity(g1Start + i, g2Start + j)) {
+                            if (testSequencesSimilarity<usePivotFilter>(g1Start + i, g2Start + j)) {
                                 res.push_back(pair<uint16_t, uint16_t>(g1Start + i, g2Start + j));
                             }
                         }
@@ -314,7 +328,7 @@ private:
             for(int i = 0; i < xParams.d - 1; i++) {
                 int j = i < gEnd?gEnd:i + 1;
                 for (; j < xParams.d; j++) {
-                    if (testSequencesSimilarity(i, j)) {
+                    if (testSequencesSimilarity<usePivotFilter>(i, j)) {
                         res.push_back(pair<uint16_t, uint16_t>(i, j));
                     }
                 }
@@ -334,16 +348,17 @@ public:
     virtual ~BrutePwHammDistAlgorithm() {
         if (pivotDist)
             delete[] pivotDist;
-        if (nibbles)
-            delete[] nibbles;
+        if (seqAugmention)
+            delete[] seqAugmention;
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
-        if (grouped)
-            res = findSimilarSequencesUsingGroupedApproach();
-        else if (pivot)
+        if (xParams.groupedBruteMode)
+            res = xParams.pivotsFilterMode?findSimilarSequencesUsingGroupedApproach<true>()
+                    :findSimilarSequencesUsingGroupedApproach<false>();
+        else if (xParams.pivotsFilterMode)
             res = findSimilarSequencesUsingControlPivot();
         else
             res = findSimilarSequencesUsingStandardBrute();
@@ -355,17 +370,23 @@ public:
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
-        for (pair<uint16_t, uint16_t> pair: pairs) {
-            if (testSequencesSimilarity(pair.first, pair.second)) {
-                res.push_back(pair);
+        if (xParams.pivotsFilterMode)
+            for (pair<uint16_t, uint16_t> pair: pairs) {
+                if (testSequencesSimilarity<true>(pair.first, pair.second))
+                    res.push_back(pair);
             }
-        }
+        else
+            for (pair<uint16_t, uint16_t> pair: pairs) {
+                if (testSequencesSimilarity<false>(pair.first, pair.second))
+                    res.push_back(pair);
+            }
         postprocessing();
         return res;
     }
 
+    template<bool usePivotFilter>
     inline bool testSequencesSimilarity(uint16_t i, uint16_t j) {
-        if(pivot) {
+        if(usePivotFilter) {
             filterResult res = pivotFilter(i, j);
             if (res == different)
                 return false;
@@ -382,8 +403,11 @@ public:
     }
 
     string getName() {
-        return (nibble?NIBBLIFICATION_PREFIX_ID:"") + (pivot?(xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") + (grouped?GROUPED_PREFIX_ID:"") +
-            (shortcircuit?SHORT_CIRCUIT_PREFIX_ID:"") + BRUTE_FORCE_ID +
+        return (compact?COMPACT_PREFIX_ID:"") +
+            (xParams.pivotsFilterMode?(
+                    xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
+            (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +
+            (shortcircuit?"":NO_SHORT_CIRCUIT_PREFIX_ID) + BRUTE_FORCE_ID +
             (binaryAlphabet?BINARY_MODE_ID_SUFFIX:"");
     }
 };

@@ -21,8 +21,8 @@ struct ExperimentParams {
 
     std::string algorithmID = "bf";
     bool shortCircuitMode = true;
-    bool nibblesMode = false;
-    bool groupedBFMode = false;
+    bool compactMode = false;
+    bool groupedBruteMode = false;
     bool pivotsFilterMode = false;
     bool pivotsElectionMode = false;
 
@@ -55,7 +55,7 @@ struct ExperimentParams {
 
     void enableBinaryMode() {
         binaryMode = true;
-        nibblesMode = false;
+        compactMode = false;
         alphabetSize = 2;
         enableOnesInPromiles();
         enableBitsPerPacked();

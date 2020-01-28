@@ -7,7 +7,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     int opt; // current option
 
-    std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") + std::string("r:a:pPSgnAvq?");
+    std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
+            std::string(xParams.isInBinaryMode()?"":"c") +
+            std::string("r:a:pPngAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
@@ -22,7 +24,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'a':
                 xParams.algorithmID = std::string(optarg);
                 break;
-            case 'S':
+            case 'n':
                 xParams.shortCircuitMode = false;
                 break;
             case 'P':
@@ -31,10 +33,10 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 xParams.pivotsFilterMode = true;
                 break;
             case 'g':
-                xParams.groupedBFMode = true;
+                xParams.groupedBruteMode = true;
                 break;
-            case 'n':
-                xParams.nibblesMode = true;
+            case 'c':
+                xParams.compactMode = true;
                 break;
             case 'A':
                 xParams.alignSequencesTo256bits = false;
@@ -56,8 +58,10 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-S] [-p] [-P] [-g] [-n]\n"
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-P] [-g]\n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
+                if (!xParams.isInBinaryMode())
+                    fprintf(stderr, "[-c] ");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
@@ -72,9 +76,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                     fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getAlgorithmName().c_str());
                 }
                 fprintf(stderr, "\n-p pivot filter mode (or -P with pivot election)"
-                                "\n-S disable short-circuit"
+                                "\n-n disable short-circuit"
                                 "\n-g sequences matched in groups (for bf algorithm)"
-                                "\n-n nibbles or nibble-like processing\n");
+                                "\n-c compact mode processing\n");
                 fprintf(stderr, "\n-A ignore aligning sequences to 256-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
                 if (xParams.isBitsPerPackedEnabled())

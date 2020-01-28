@@ -24,7 +24,7 @@ public:
             switch(xParams.bytesPerElement) {
                 case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory, postAlgorithm);
                 case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(xParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory, postAlgorithm);
-                case 4: return new QuantizationBasedPwHammDistAlgorithm<uint32_t>(xParams, new SimpleBinaryQuantizer<uint32_t>(), binaryAlgorithmFactory, postAlgorithm);
+//                case 4: return new QuantizationBasedPwHammDistAlgorithm<uint32_t>(xParams, new SimpleBinaryQuantizer<uint32_t>(), binaryAlgorithmFactory, postAlgorithm);
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
