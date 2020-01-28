@@ -53,6 +53,7 @@ private:
     uint8_t pivotsCount = PIVOTS_COUNT_MAX;
     uint16_t pivots[PIVOTS_COUNT_MAX];
     uint16_t* pivotDist = 0;
+    uint8_t ctrlPivot = 0;
 
     // nibble mode
     uint8_t* nibbles = 0;
@@ -70,7 +71,7 @@ private:
                 electAndCalculateDistancesToPivots();
             else
                 calculateDistancesToPivots();
-            if (xParams.verbose) cout << endl;
+            if (xParams.verbose) cout << "... " << " (" << time_millis() << " msec)" << endl;
         }
     }
 
@@ -154,6 +155,7 @@ private:
         uint16_t candidate = 0;
         if (pivotDist)
             delete[] pivotDist;
+        uint16_t maxUp2HalfKCount = 0;
         pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT_MAX];
         uint16_t* ptr = pivotDist;
         for(int p = 0; p < pivotsCount; p++) {
@@ -165,9 +167,17 @@ private:
             if (xParams.verbose) cout << candidate << "\t";
             uint8_t* x = seq1 + (size_t) pivots[p] * xParams.bytesPerSequence;
             uint8_t* y = seq2;
+            int up2HalfKCount = 0;
             for(int j = 0; j < xParams.d; j++) {
                 ptr[j] = findSequencesDistance<false>(x, y);
                 y += xParams.bytesPerSequence;
+                if (ptr[j] < xParams.k / 2)
+                    up2HalfKCount++;
+            }
+            cout << "(" << up2HalfKCount << ") ";
+            if (maxUp2HalfKCount < up2HalfKCount) {
+                maxUp2HalfKCount = up2HalfKCount;
+                ctrlPivot = p;
             }
             ptr += xParams.d;
             candidate++;
@@ -183,6 +193,7 @@ private:
         memset(&minPivotDist, UINT8_MAX, sizeof(minPivotDist));
         const uint16_t minThreshold = xParams.k;
         uint32_t sumPivotDist[xParams.d] = { 0 };
+        uint16_t maxUp2HalfKCount = 0;
         uint16_t* ptr = pivotDist;
         for(int p = 0; p < pivotsCount; p++) {
             pivots[p] = candidate;
@@ -190,9 +201,12 @@ private:
             uint32_t maxSumDist = 0;
             uint8_t* x = seq1 + (size_t) pivots[p] * xParams.bytesPerSequence;
             uint8_t* y = seq2;
+            int up2HalfKCount = 0;
             for(int j = 0; j < xParams.d; j++) {
                 ptr[j] = findSequencesDistance<false>(x, y);
                 y += xParams.bytesPerSequence;
+                if (ptr[j] < xParams.k / 2)
+                    up2HalfKCount++;
                 if (minPivotDist[j] > ptr[j])
                     minPivotDist[j] = ptr[j];
                 if (minPivotDist[j] > minThreshold) {
@@ -202,6 +216,11 @@ private:
                         candidate = j;
                     }
                 }
+            }
+            cout << "(" << up2HalfKCount << ") ";
+            if (maxUp2HalfKCount < up2HalfKCount) {
+                maxUp2HalfKCount = up2HalfKCount;
+                ctrlPivot = p;
             }
             if (pivots[p] == candidate) {
                 pivotsCount = p + 1;
@@ -225,6 +244,31 @@ private:
         }
         return inconclusive;
     }
+
+    vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingControlPivot() {
+        vector<uint16_t> pivotRank(xParams.d);
+        for(int i = 0; i < xParams.d; i++)
+            pivotRank[i] = i;
+        uint16_t* ctrlPivotDist = pivotDist + ctrlPivot * xParams.d;
+        std::sort(pivotRank.begin(), pivotRank.end(), [ctrlPivotDist](const uint16_t& idx1, const uint16_t& idx2) -> bool
+            { return ctrlPivotDist[idx1] < ctrlPivotDist[idx2]; });
+
+        vector<pair<uint16_t, uint16_t>> res;
+        for(int ri = 0; ri < xParams.d - 1; ri++) {
+            int rj = ri + 1;
+            int i = pivotRank[ri];
+            const int iDist = ctrlPivotDist[i];
+            while (rj < xParams.d && iDist + ctrlPivotDist[pivotRank[rj]] <= xParams.k)
+                res.push_back(pair<uint16_t, uint16_t>(i, pivotRank[rj++]));
+            while (rj < xParams.d && ctrlPivotDist[pivotRank[rj]] - iDist <= xParams.k) {
+                if (testSequencesSimilarity(i, pivotRank[rj]))
+                    res.push_back(pair<uint16_t, uint16_t>(i, pivotRank[rj]));
+                rj++;
+            }
+        }
+        return res;
+    };
+
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingStandardBrute() {
         vector<pair<uint16_t, uint16_t>> res;
@@ -299,6 +343,8 @@ public:
         vector<pair<uint16_t, uint16_t>> res;
         if (grouped)
             res = findSimilarSequencesUsingGroupedApproach();
+        else if (pivot)
+            res = findSimilarSequencesUsingControlPivot();
         else
             res = findSimilarSequencesUsingStandardBrute();
         postprocessing();
