@@ -265,6 +265,8 @@ private:
                 const int j = pivotRank[rj];
                 filterResult filterRes = inconclusive;
                 for(int p = 0; p < pivotsCount; p++) {
+                    if (p == ctrlPivot)
+                        continue;
                     const int jDist = pivotDist[p * xParams.d + j];
                     if (abs(iDist[p] - jDist) > xParams.k) {
                         filterRes = different;
