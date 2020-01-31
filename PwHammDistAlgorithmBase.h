@@ -85,6 +85,14 @@ private:
 
     void postprocessing() {
         xParams.bytesPerSequence = origBytesPerSequence;
+        if (seqAugmention) {
+            delete[] seqAugmention;
+            seqAugmention = 0;
+        }
+        if (pivotDist) {
+            delete[] pivotDist;
+            pivotDist = 0;
+        }
     }
 
 
@@ -124,8 +132,6 @@ private:
     }
 
     void compactation(const uint8_t *sequences) {
-        if (seqAugmention)
-            delete[] seqAugmention;
         if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8) {
             xParams.bytesPerSequence /= 2;
             seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence * 2]();
@@ -160,43 +166,39 @@ private:
 
     void interleaveBitsInSequence(uint8_t* dest, uint* seq) {
         uint64_t* z[32];
-        z[0] = (uint64_t*) seqAugmention;
+        z[0] = (uint64_t*) dest;
         uint64_t mask[32];
-        mask[0] = sizeof(uint) == 16 ? 0x0001000100010001 : 0x0101010101010101;
+        mask[0] = sizeof(uint) == 2 ? 0x0001000100010001 : 0x0101010101010101;
         for(int b = 1; b < bitsPerElement; b++) {
             z[b] = z[b - 1] + augSeqPerBitInULLs;
             mask[b] = mask[b - 1] * 2;
         }
 
         int end = this->xParams.m / 64;
+        uint64_t *srcPtr64 = (uint64_t *) seq;
         for(int j = 0; j < end; j++) {
-            uint64_t *srcPtr64 = (uint64_t *) (seq + j * 8);
             for (int shift = 0; shift < 8 * sizeof(uint); ++shift) {
                 for (int b = 0; b < bitsPerElement; b++)
-                    *z[b] = ((*z[b]) << 1) + ((*srcPtr64) & mask[b]);
+                    *z[b] = ((*z[b]) << 1) + (((*srcPtr64) & mask[b]) >> b);
                 srcPtr64++;
             }
             for(int b = 0; b < bitsPerElement; b++)
                 z[b]++;
         }
 
-        uint64_t *srcPtr64 = (uint64_t *) (seq + end * 8);
-        end = (this->xParams.m - end * 64) / (8 / sizeof(uint));
+        end = ceilDivisionBySmallInteger(this->xParams.m - end * 64, 8 / sizeof(uint));
         for(int shift = 0; shift < end; ++shift) {
             for (int b = 0; b < bitsPerElement; b++)
-                *z[b] = ((*z[b]) << 1) + ((*srcPtr64) & mask[b]);
+                *z[b] = ((*z[b]) << 1) + (((*srcPtr64) & mask[b]) >> b);
             srcPtr64++;
         }
     }
 
     void interleaveBits(const uint8_t *sequences) {
-        if (seqAugmention)
-            delete[] seqAugmention;
         this->bitsPerElement = 32 - __builtin_clz(xParams.alphabetSize - 1);
-        cout << xParams.alphabetSize << "\t" << (int) bitsPerElement << endl;
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(xParams.m, 64);
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(augSeqPerBitInULLs, 4) * 4;
-        xParams.bytesPerSequence = augSeqPerBitInULLs * 8;
+        xParams.bytesPerSequence = bitsPerElement * augSeqPerBitInULLs * 8;
         seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence]();
 
         uint8_t* dest = seqAugmention;
@@ -213,8 +215,6 @@ private:
 
     void calculateDistancesToPivots() {
         uint16_t candidate = 0;
-        if (pivotDist)
-            delete[] pivotDist;
         uint16_t maxUp2HalfKCount = 0;
         pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT_MAX];
         uint16_t* ptr = pivotDist;
@@ -246,8 +246,6 @@ private:
 
     void electAndCalculateDistancesToPivots() {
         uint16_t candidate = 0;
-        if (pivotDist)
-            delete[] pivotDist;
         pivotDist = new uint16_t[xParams.d * pivotsCount];
         uint16_t minPivotDist[xParams.d];
         memset(&minPivotDist, UINT8_MAX, sizeof(minPivotDist));

@@ -323,11 +323,18 @@ inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int 
     return res;
 }
 
+extern uint64_t mismatchFlags[];
+
 inline uint64_t hammingInterleavedBitsDistance(const uint64_t *x, const uint64_t *y, int lengthInULLs, int bitsPerElement)
 {
     assert(lengthInULLs % 4 == 0);
-    uint64_t* mismatchFlags = new uint64_t[lengthInULLs]();
-    for(int b = 0; b < bitsPerElement; b++) {
+    for (int i = 0; i < lengthInULLs; i += 4) {
+        mismatchFlags[i] = x[i] ^ y[i];
+        mismatchFlags[i + 1] = x[i + 1] ^ y[i + 1];
+        mismatchFlags[i + 2] = x[i + 2] ^ y[i + 2];
+        mismatchFlags[i + 3] = x[i + 3] ^ y[i + 3];
+    }
+    for(int b = 1; b < bitsPerElement; b++) {
         for (int i = 0; i < lengthInULLs; i += 4) {
             mismatchFlags[i] |= x[i] ^ y[i];
             mismatchFlags[i + 1] |= x[i + 1] ^ y[i + 1];
@@ -349,7 +356,6 @@ inline uint64_t hammingInterleavedBitsDistance(const uint64_t *x, const uint64_t
 {
     assert(lengthInULLs % 4 == 0);
     uint64_t res = 0;
-    uint64_t* mismatchFlags = new uint64_t[lengthInULLs];
     for (int i = 0; i < lengthInULLs; i += 4) {
         mismatchFlags[i] = x[i] ^ y[i];
         mismatchFlags[i + 1] = x[i + 1] ^ y[i + 1];

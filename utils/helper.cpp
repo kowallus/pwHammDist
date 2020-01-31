@@ -2,6 +2,8 @@
 
 #include "byteswap.h"
 
+uint64_t mismatchFlags[UINT16_MAX] = { 0 };
+
 std::ostream *logout = &std::cout;
 
 void cleanCache() {
