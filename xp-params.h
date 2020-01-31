@@ -25,6 +25,7 @@ struct ExperimentParams {
     bool groupedBruteMode = false;
     bool pivotsFilterMode = false;
     bool pivotsElectionMode = false;
+    bool interleaveBitsMode = false;
 
     // extra params
 

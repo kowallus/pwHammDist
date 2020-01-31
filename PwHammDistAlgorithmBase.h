@@ -12,6 +12,7 @@ const string BRUTE_FORCE_ID = "bf";
 const string NO_SHORT_CIRCUIT_PREFIX_ID = "n";
 const string GROUPED_PREFIX_ID = "g";
 const string COMPACT_PREFIX_ID = "c";
+const string INTERLEAVE_BITS_PREFIX_ID = "i";
 const string PIVOT_FILTER_PREFIX_ID = "p";
 const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
@@ -44,6 +45,8 @@ class BrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
 
+    uint8_t* origSeq = 0;
+    uint16_t origBytesPerSequence;
     uint8_t* seq1 = 0;
     uint8_t* seq2 = 0;
 
@@ -54,12 +57,18 @@ private:
     uint16_t* pivotDist = 0;
     uint8_t ctrlPivot = 0;
 
-    // nibble and compact mode
+    // compact (or nibble) and interleaved modes
     uint8_t* seqAugmention = 0;
+    uint16_t augSeqPerBitInULLs;
+    uint8_t bitsPerElement;
 
     void preprocessing(const uint8_t *sequences) {
+        origSeq = (uint8_t*) sequences;
+        origBytesPerSequence = xParams.bytesPerSequence;
         if (compact) {
             compactation(sequences);
+        } else if (xParams.interleaveBitsMode) {
+            interleaveBits(sequences);
         } else {
             seq1 = (uint8_t*) sequences;
             seq2 = (uint8_t*) sequences;
@@ -75,9 +84,7 @@ private:
     }
 
     void postprocessing() {
-        if (compact) {
-            decompactation();
-        }
+        xParams.bytesPerSequence = origBytesPerSequence;
     }
 
 
@@ -102,9 +109,15 @@ private:
                                                                  xParams.bytesPerSequence / 2);
                 }
             } else {
-                dist = (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2, xParams.m,
-                                                                             xParams.k) :
-                       hammingDistance((uint *) seq1, (uint *) seq2, xParams.m);
+                if (xParams.interleaveBitsMode) {
+                    dist = (allowShortCircuit && shortcircuit) ? hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
+                            augSeqPerBitInULLs, bitsPerElement, xParams.k):
+                           hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs, bitsPerElement);
+                } else {
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2, xParams.m,
+                                                                                 xParams.k) :
+                           hammingDistance((uint *) seq1, (uint *) seq2, xParams.m);
+                }
             }
         }
         return dist;
@@ -145,9 +158,57 @@ private:
         }
     }
 
-    void decompactation() {
-        if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8)
-            xParams.bytesPerSequence *= 2;
+    void interleaveBitsInSequence(uint8_t* dest, uint* seq) {
+        uint64_t* z[32];
+        z[0] = (uint64_t*) seqAugmention;
+        uint64_t mask[32];
+        mask[0] = sizeof(uint) == 16 ? 0x0001000100010001 : 0x0101010101010101;
+        for(int b = 1; b < bitsPerElement; b++) {
+            z[b] = z[b - 1] + augSeqPerBitInULLs;
+            mask[b] = mask[b - 1] * 2;
+        }
+
+        int end = this->xParams.m / 64;
+        for(int j = 0; j < end; j++) {
+            uint64_t *srcPtr64 = (uint64_t *) (seq + j * 8);
+            for (int shift = 0; shift < 8 * sizeof(uint); ++shift) {
+                for (int b = 0; b < bitsPerElement; b++)
+                    *z[b] = ((*z[b]) << 1) + ((*srcPtr64) & mask[b]);
+                srcPtr64++;
+            }
+            for(int b = 0; b < bitsPerElement; b++)
+                z[b]++;
+        }
+
+        uint64_t *srcPtr64 = (uint64_t *) (seq + end * 8);
+        end = (this->xParams.m - end * 64) / (8 / sizeof(uint));
+        for(int shift = 0; shift < end; ++shift) {
+            for (int b = 0; b < bitsPerElement; b++)
+                *z[b] = ((*z[b]) << 1) + ((*srcPtr64) & mask[b]);
+            srcPtr64++;
+        }
+    }
+
+    void interleaveBits(const uint8_t *sequences) {
+        if (seqAugmention)
+            delete[] seqAugmention;
+        this->bitsPerElement = 32 - __builtin_clz(xParams.alphabetSize - 1);
+        cout << xParams.alphabetSize << "\t" << (int) bitsPerElement << endl;
+        augSeqPerBitInULLs = ceilDivisionBySmallInteger(xParams.m, 64);
+        augSeqPerBitInULLs = ceilDivisionBySmallInteger(augSeqPerBitInULLs, 4) * 4;
+        xParams.bytesPerSequence = augSeqPerBitInULLs * 8;
+        seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence]();
+
+        uint8_t* dest = seqAugmention;
+        uint8_t* seq = (uint8_t*) sequences;
+        for(uint16_t i = 0; i < xParams.d; i++) {
+            interleaveBitsInSequence(dest, (uint*) seq);
+            seq += origBytesPerSequence;
+            dest += xParams.bytesPerSequence;
+        }
+        seq1 = seqAugmention;
+        seq2 = seqAugmention;
+        if (xParams.verbose) cout << "interleaved bits... " << " (" << time_millis() << " msec)" << endl;
     }
 
     void calculateDistancesToPivots() {
@@ -405,7 +466,7 @@ public:
     }
 
     string getName() {
-        return (compact?COMPACT_PREFIX_ID:"") +
+        return (compact?COMPACT_PREFIX_ID:"") + (xParams.interleaveBitsMode?INTERLEAVE_BITS_PREFIX_ID:"") +
             (xParams.pivotsFilterMode?(
                     xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
             (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +

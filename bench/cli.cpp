@@ -8,7 +8,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     int opt; // current option
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
-            std::string(xParams.isInBinaryMode()?"":"c") +
+            std::string(xParams.isInBinaryMode()?"":"ci") +
             std::string("r:a:pPngAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
@@ -38,6 +38,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'c':
                 xParams.compactMode = true;
                 break;
+            case 'i':
+                xParams.interleaveBitsMode = true;
+                break;
             case 'A':
                 xParams.alignSequencesTo256bits = false;
                 break;
@@ -58,10 +61,10 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-P] [-g]\n"
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-P] [-g] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
-                    fprintf(stderr, "[-c] ");
+                    fprintf(stderr, "[-c] [-i]");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
@@ -92,6 +95,12 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     if (optind != (argc - fixedArgsCount)) {
         fprintf(stderr, "%s: Expected %d arguments after options (found %d)\n", argv[0], fixedArgsCount, argc - optind);
         fprintf(stderr, "try '%s -?' for more information\n", argv[0]);
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (xParams.interleaveBitsMode && xParams.compactMode) {
+        fprintf(stderr, "Error: modes compact and interleave bits cannot be used together.\n");
 
         exit(EXIT_FAILURE);
     }

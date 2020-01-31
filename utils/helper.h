@@ -13,6 +13,7 @@
 #include <climits>
 #include <cmath>
 #include <sstream>
+#include <cassert>
 #include "nmmintrin.h"
 
 using namespace std;
@@ -316,6 +317,61 @@ inline uint64_t hammingDistanceBinary(const uint64_t *x, const uint64_t *y, int 
         res += __builtin_popcountll(x[i + 1] ^ y[i + 1]);
         res += __builtin_popcountll(x[i + 2] ^ y[i + 2]);
         res += __builtin_popcountll(x[i + 3] ^ y[i + 3]);
+        if (res > limit)
+            return res;
+    }
+    return res;
+}
+
+inline uint64_t hammingInterleavedBitsDistance(const uint64_t *x, const uint64_t *y, int lengthInULLs, int bitsPerElement)
+{
+    assert(lengthInULLs % 4 == 0);
+    uint64_t* mismatchFlags = new uint64_t[lengthInULLs]();
+    for(int b = 0; b < bitsPerElement; b++) {
+        for (int i = 0; i < lengthInULLs; i += 4) {
+            mismatchFlags[i] |= x[i] ^ y[i];
+            mismatchFlags[i + 1] |= x[i + 1] ^ y[i + 1];
+            mismatchFlags[i + 2] |= x[i + 2] ^ y[i + 2];
+            mismatchFlags[i + 3] |= x[i + 3] ^ y[i + 3];
+        }
+        x += lengthInULLs;
+        y += lengthInULLs;
+    }
+    uint64_t res = 0;
+    for (int i = 0; i < lengthInULLs; i += 4) {
+        res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+               __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+    }
+    return res;
+}
+
+inline uint64_t hammingInterleavedBitsDistance(const uint64_t *x, const uint64_t *y, int lengthInULLs, int bitsPerElement, int limit)
+{
+    assert(lengthInULLs % 4 == 0);
+    uint64_t res = 0;
+    uint64_t* mismatchFlags = new uint64_t[lengthInULLs];
+    for (int i = 0; i < lengthInULLs; i += 4) {
+        mismatchFlags[i] = x[i] ^ y[i];
+        mismatchFlags[i + 1] = x[i + 1] ^ y[i + 1];
+        mismatchFlags[i + 2] = x[i + 2] ^ y[i + 2];
+        mismatchFlags[i + 3] = x[i + 3] ^ y[i + 3];
+        res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+                __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+        if (res > limit)
+            return res;
+    }
+    for(int b = 1; b < bitsPerElement; b++) {
+        x += lengthInULLs;
+        y += lengthInULLs;
+        res = 0;
+        for (int i = 0; i < lengthInULLs; i += 4) {
+            mismatchFlags[i] |= x[i] ^ y[i];
+            mismatchFlags[i + 1] |= x[i + 1] ^ y[i + 1];
+            mismatchFlags[i + 2] |= x[i + 2] ^ y[i + 2];
+            mismatchFlags[i + 3] |= x[i + 3] ^ y[i + 3];
+            res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+                   __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+        }
         if (res > limit)
             return res;
     }
