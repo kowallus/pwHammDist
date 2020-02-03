@@ -110,6 +110,12 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
         exit(EXIT_FAILURE);
     }
 
+    if (xParams.lazyInterleaveBitsMode && xParams.pivotsFilterMode) {
+        fprintf(stderr, "Error: mode pivots and lazy interleave bits cannot be used together.\n");
+
+        exit(EXIT_FAILURE);
+    }
+
     if (xParams.isOnesInPromilesEnabled())
         xParams.onesInPromiles = atoi(argv[optind++]);
     if (xParams.isInDatasetMode())
