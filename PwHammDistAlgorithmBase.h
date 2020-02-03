@@ -77,10 +77,10 @@ private:
         if (xParams.pivotsFilterMode) {
             if (xParams.verbose) cout << "pivots: ";
             if (xParams.pivotsElectionMode)
-                electAndCalculateDistancesToPivots();
+                calculateDistancesToPivotsWithStats();
             else
-                calculateDistancesToPivots();
-            if (xParams.verbose) cout << "... " << " (" << time_millis() << " msec)" << endl;
+                calculateDistancesToRandomPivots();
+            if (xParams.verbose) cout << "..." << " (" << time_millis() << " msec)" << endl;
         }
     }
 
@@ -313,7 +313,7 @@ private:
         if (xParams.verbose) cout << "interleaved bits... " << " (" << time_millis() << " msec)" << endl;
     }
 
-    void calculateDistancesToPivots() {
+    void calculateDistancesToRandomPivots() {
         randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
         uint16_t candidate = randgenerator() % xParams.d;
         uint16_t maxUp2HalfKCount = 0;
@@ -336,7 +336,6 @@ private:
                 maxUp2HalfKCount = up2HalfKCount;
                 ctrlPivot = p;
             }
-            ptr += xParams.d;
             if (p > xParams.d) {
                 pivotsCount = p;
                 break;
@@ -345,16 +344,18 @@ private:
             while (lackOfCandidate) {
                 candidate = randgenerator() % xParams.d;
                 lackOfCandidate = false;
-                for(int p2 = 0; p2 <= p; p2++)
+                for (int p2 = 0; p2 <= p; p2++)
                     if (pivots[p2] == candidate) {
                         lackOfCandidate = true;
                         break;
                     }
             }
+            ptr += xParams.d;
         }
     }
 
-    void electAndCalculateDistancesToPivots() {
+    template<bool maxSumPivots = false>
+    void calculateDistancesToPivotsWithStats() {
         randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
         uint16_t candidate = randgenerator() % xParams.d;
         pivotDist = new uint16_t[xParams.d * pivotsCount];
@@ -394,6 +395,23 @@ private:
             if (pivots[p] == candidate) {
                 pivotsCount = p + 1;
                 break;
+            }
+            if (!maxSumPivots && p + 1 < pivotsCount) {
+                bool lackOfCandidate = true;
+                while (lackOfCandidate) {
+                    bool badCandidate = true;
+                    do {
+                        candidate = randgenerator() % xParams.d;
+                        badCandidate = minPivotDist[candidate] < minThreshold;
+                        if (badCandidate) cout << ".";
+                    } while (badCandidate);
+                    lackOfCandidate = false;
+                    for (int p2 = 0; p2 <= p; p2++)
+                        if (pivots[p2] == candidate) {
+                            lackOfCandidate = true;
+                            break;
+                        }
+                }
             }
             ptr += xParams.d;
         }
