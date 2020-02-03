@@ -5,6 +5,7 @@
 #include "xp-params.h"
 #include <vector>
 #include <cassert>
+#include <random>
 
 using namespace std;
 
@@ -214,15 +215,12 @@ private:
     }
 
     void calculateDistancesToPivots() {
-        uint16_t candidate = 0;
+        randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+        uint16_t candidate = randgenerator() % xParams.d;
         uint16_t maxUp2HalfKCount = 0;
         pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT_MAX];
         uint16_t* ptr = pivotDist;
         for(int p = 0; p < pivotsCount; p++) {
-            if (candidate >= xParams.d) {
-                pivotsCount = p;
-                break;
-            }
             pivots[p] = candidate;
             if (xParams.verbose) cout << candidate << "\t";
             uint8_t* x = seq1 + (size_t) pivots[p] * xParams.bytesPerSequence;
@@ -240,12 +238,26 @@ private:
                 ctrlPivot = p;
             }
             ptr += xParams.d;
-            candidate++;
+            if (p > xParams.d) {
+                pivotsCount = p;
+                break;
+            }
+            bool lackOfCandidate = true;
+            while (lackOfCandidate) {
+                candidate = randgenerator() % xParams.d;
+                lackOfCandidate = false;
+                for(int p2 = 0; p2 <= p; p2++)
+                    if (pivots[p2] == candidate) {
+                        lackOfCandidate = true;
+                        break;
+                    }
+            }
         }
     }
 
     void electAndCalculateDistancesToPivots() {
-        uint16_t candidate = 0;
+        randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+        uint16_t candidate = randgenerator() % xParams.d;
         pivotDist = new uint16_t[xParams.d * pivotsCount];
         uint16_t minPivotDist[xParams.d];
         memset(&minPivotDist, UINT8_MAX, sizeof(minPivotDist));

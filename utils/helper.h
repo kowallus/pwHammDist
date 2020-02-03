@@ -14,6 +14,7 @@
 #include <cmath>
 #include <sstream>
 #include <cassert>
+#include <random>
 #include "nmmintrin.h"
 
 using namespace std;
@@ -35,6 +36,8 @@ unsigned long long int clock_millis(clock_t checkpoint);
 chrono::steady_clock::time_point time_checkpoint();
 unsigned long long int time_millis();
 unsigned long long int time_millis(chrono::steady_clock::time_point checkpoint);
+
+extern std::mt19937 randgenerator;
 
 // string conversion routines
 

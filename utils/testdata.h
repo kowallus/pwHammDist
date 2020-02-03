@@ -2,13 +2,10 @@
 #define TESTDATA_H
 
 #include <vector>
-#include <random>
 #include "helper.h"
 #include "../xp-params.h"
 
 using namespace std;
-
-std::mt19937 randgenerator;
 
 void getRandomValues(uint8_t* data, ExperimentParams& xParams) {
     randgenerator.seed(randgenerator.default_seed);

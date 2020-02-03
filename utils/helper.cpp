@@ -50,6 +50,8 @@ unsigned long long int time_millis() {
     return time_millis(chronocheckpoint);
 }
 
+std::mt19937 randgenerator;
+
 const size_t chunkSize = 10000000;
 
 void* readArray(std::istream& in, size_t arraySizeInBytes) {
