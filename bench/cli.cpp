@@ -105,13 +105,19 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     }
 
     if (xParams.interleaveBitsMode && xParams.compactMode) {
-        fprintf(stderr, "Error: modes compact and interleave bits cannot be used together.\n");
+        fprintf(stderr, "Error: modes compact and interleaved bits cannot be used together.\n");
 
         exit(EXIT_FAILURE);
     }
 
     if (xParams.lazyInterleaveBitsMode && xParams.pivotsFilterMode) {
-        fprintf(stderr, "Error: mode pivots and lazy interleave bits cannot be used together.\n");
+        fprintf(stderr, "Error: mode pivots and lazy interleaved bits cannot be used together.\n");
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (xParams.lazyInterleaveBitsMode && !xParams.shortCircuitMode) {
+        fprintf(stderr, "Error: lazy interleaved bits cannot be used without short-circuit mode.\n");
 
         exit(EXIT_FAILURE);
     }
