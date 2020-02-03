@@ -26,6 +26,7 @@ struct ExperimentParams {
     bool pivotsFilterMode = false;
     bool pivotsElectionMode = false;
     bool interleaveBitsMode = false;
+    bool lazyInterleaveBitsMode = false;
 
     // extra params
 

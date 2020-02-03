@@ -8,7 +8,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     int opt; // current option
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
-            std::string(xParams.isInBinaryMode()?"":"ci") +
+            std::string(xParams.isInBinaryMode()?"":"ciI") +
             std::string("r:a:pPngAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
@@ -38,6 +38,8 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'c':
                 xParams.compactMode = true;
                 break;
+            case 'I':
+                xParams.lazyInterleaveBitsMode = true;
             case 'i':
                 xParams.interleaveBitsMode = true;
                 break;
@@ -64,7 +66,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-P] [-g] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
-                    fprintf(stderr, "[-c] [-i]");
+                    fprintf(stderr, "[-c] [-i] [-I]");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
@@ -80,8 +82,11 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 }
                 fprintf(stderr, "\n-p pivot filter mode (or -P with pivot election)"
                                 "\n-n disable short-circuit"
-                                "\n-g sequences matched in groups (for bf algorithm)"
-                                "\n-c compact mode processing\n");
+                                "\n-g sequences matched in groups (for bf algorithm)");
+                if (!xParams.isInBinaryMode()) {
+                    fprintf(stderr, "\n-c compact mode processing\n");
+                    fprintf(stderr, "\n-i interleaved bits mode (or -I with lazy evaluation)\n");
+                }
                 fprintf(stderr, "\n-A ignore aligning sequences to 256-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
                 if (xParams.isBitsPerPackedEnabled())

@@ -119,9 +119,14 @@ private:
                 }
             } else {
                 if (xParams.interleaveBitsMode) {
-                    dist = (allowShortCircuit && shortcircuit) ? hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
+                    if (xParams.lazyInterleaveBitsMode)
+                        dist = (allowShortCircuit && shortcircuit) ? lazyHammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
                             augSeqPerBitInULLs, bitsPerElement, xParams.k):
-                           hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs, bitsPerElement);
+                                lazyHammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs , bitsPerElement);
+                    else
+                        dist = (allowShortCircuit && shortcircuit) ? hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
+                                                                                                    augSeqPerBitInULLs, bitsPerElement, xParams.k):
+                               hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs, bitsPerElement);
                 } else {
                     dist = (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2, xParams.m,
                                                                                  xParams.k) :
@@ -165,31 +170,123 @@ private:
         }
     }
 
+    inline uint64_t lazyHammingInterleavedBitsDistance(const uint64_t *x, const uint64_t *y, int lengthInULLs, int bitsPerElement)
+    {
+        lengthInULLs--;
+        assert(lengthInULLs % 4 == 0);
+        x++; y++;
+        for (int i = 0; i < lengthInULLs; i += 4) {
+            mismatchFlags[i] = x[i] ^ y[i];
+            mismatchFlags[i + 1] = x[i + 1] ^ y[i + 1];
+            mismatchFlags[i + 2] = x[i + 2] ^ y[i + 2];
+            mismatchFlags[i + 3] = x[i + 3] ^ y[i + 3];
+        }
+        for(int b = 1; b < bitsPerElement; b++) {
+            x += lengthInULLs;
+            y += lengthInULLs;
+            lazyInterleaveBitsInSequence((uint8_t*) (x++), b);
+            lazyInterleaveBitsInSequence((uint8_t*) (y++), b);
+            for (int i = 0; i < lengthInULLs; i += 4) {
+                mismatchFlags[i] |= x[i] ^ y[i];
+                mismatchFlags[i + 1] |= x[i + 1] ^ y[i + 1];
+                mismatchFlags[i + 2] |= x[i + 2] ^ y[i + 2];
+                mismatchFlags[i + 3] |= x[i + 3] ^ y[i + 3];
+            }
+        }
+        uint64_t res = 0;
+        for (int i = 0; i < lengthInULLs; i += 4) {
+            res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+                   __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+        }
+        return res;
+    }
+
+    inline uint64_t lazyHammingInterleavedBitsDistance(const uint64_t *x, const uint64_t *y, int lengthInULLs, int bitsPerElement, int limit)
+    {
+        lengthInULLs--;
+        assert(lengthInULLs % 4 == 0);
+        x++; y++;
+        uint64_t res = 0;
+        for (int i = 0; i < lengthInULLs; i += 4) {
+            mismatchFlags[i] = x[i] ^ y[i];
+            mismatchFlags[i + 1] = x[i + 1] ^ y[i + 1];
+            mismatchFlags[i + 2] = x[i + 2] ^ y[i + 2];
+            mismatchFlags[i + 3] = x[i + 3] ^ y[i + 3];
+            res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+                   __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+            if (res > limit)
+                return res;
+        }
+        for(int b = 1; b < bitsPerElement; b++) {
+            x += lengthInULLs;
+            y += lengthInULLs;
+            lazyInterleaveBitsInSequence((uint8_t*) (x++), b);
+            lazyInterleaveBitsInSequence((uint8_t*) (y++), b);
+            res = 0;
+            for (int i = 0; i < lengthInULLs; i += 4) {
+                mismatchFlags[i] |= x[i] ^ y[i];
+                mismatchFlags[i + 1] |= x[i + 1] ^ y[i + 1];
+                mismatchFlags[i + 2] |= x[i + 2] ^ y[i + 2];
+                mismatchFlags[i + 3] |= x[i + 3] ^ y[i + 3];
+                res += __builtin_popcountll(mismatchFlags[i]) + __builtin_popcountll(mismatchFlags[i + 1]) +
+                       __builtin_popcountll(mismatchFlags[i + 2]) + __builtin_popcountll(mismatchFlags[i + 3]);
+            }
+            if (res > limit)
+                return res;
+        }
+        return res;
+    }
+
+    void lazyInterleaveBitsInSequence(uint8_t* dest, int b) {
+        if (*(uint64_t*) dest == 0)
+            return;
+        uint* seq = *(uint**) dest;
+        uint64_t* z = (uint64_t*) dest;
+        *z++ = 0;
+        uint64_t mask = sizeof(uint) == 2 ? 0x0001000100010001 : 0x0101010101010101;
+        mask <<= b;
+        int end = this->xParams.m / 64;
+        uint64_t *srcPtr64 = (uint64_t *) seq;
+        for(int j = 0; j < end; j++, z++)
+            for (int shift = 0; shift < 8 * sizeof(uint); ++shift)
+                *z = ((*z) << 1) + (((*srcPtr64++) & mask) >> b);
+        end = ceilDivisionBySmallInteger(this->xParams.m - end * 64, 8 / sizeof(uint));
+        for(int shift = 0; shift < end; ++shift)
+            *z = ((*z) << 1) + (((*srcPtr64++) & mask) >> b);
+    }
+
     void interleaveBitsInSequence(uint8_t* dest, uint* seq) {
         uint64_t* z[32];
         z[0] = (uint64_t*) dest;
         uint64_t mask[32];
         mask[0] = sizeof(uint) == 2 ? 0x0001000100010001 : 0x0101010101010101;
-        for(int b = 1; b < bitsPerElement; b++) {
+        int up2BitsPerElement = xParams.lazyInterleaveBitsMode?1:bitsPerElement;
+        for(int b = 1; b < up2BitsPerElement; b++) {
             z[b] = z[b - 1] + augSeqPerBitInULLs;
             mask[b] = mask[b - 1] * 2;
         }
 
         int end = this->xParams.m / 64;
         uint64_t *srcPtr64 = (uint64_t *) seq;
+        if (xParams.lazyInterleaveBitsMode) {
+            for (int b = 1; b < bitsPerElement; b++) {
+                *((uint **) (z[0] + b * augSeqPerBitInULLs)) = seq;
+            }
+            z[0]++;
+        }
         for(int j = 0; j < end; j++) {
             for (int shift = 0; shift < 8 * sizeof(uint); ++shift) {
-                for (int b = 0; b < bitsPerElement; b++)
+                for (int b = 0; b < up2BitsPerElement; b++)
                     *z[b] = ((*z[b]) << 1) + (((*srcPtr64) & mask[b]) >> b);
                 srcPtr64++;
             }
-            for(int b = 0; b < bitsPerElement; b++)
+            for(int b = 0; b < up2BitsPerElement; b++)
                 z[b]++;
         }
 
         end = ceilDivisionBySmallInteger(this->xParams.m - end * 64, 8 / sizeof(uint));
         for(int shift = 0; shift < end; ++shift) {
-            for (int b = 0; b < bitsPerElement; b++)
+            for (int b = 0; b < up2BitsPerElement; b++)
                 *z[b] = ((*z[b]) << 1) + (((*srcPtr64) & mask[b]) >> b);
             srcPtr64++;
         }
@@ -199,6 +296,8 @@ private:
         this->bitsPerElement = 32 - __builtin_clz(xParams.alphabetSize - 1);
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(xParams.m, 64);
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(augSeqPerBitInULLs, 4) * 4;
+        if (xParams.lazyInterleaveBitsMode)
+            augSeqPerBitInULLs++;
         xParams.bytesPerSequence = bitsPerElement * augSeqPerBitInULLs * 8;
         seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence]();
 
