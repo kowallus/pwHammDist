@@ -58,6 +58,7 @@ struct ExperimentParams {
     void enableBinaryMode() {
         binaryMode = true;
         compactMode = false;
+        interleaveBitsMode = false;
         alphabetSize = 2;
         enableOnesInPromiles();
         enableBitsPerPacked();

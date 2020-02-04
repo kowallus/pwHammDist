@@ -14,6 +14,7 @@ const string NO_SHORT_CIRCUIT_PREFIX_ID = "n";
 const string GROUPED_PREFIX_ID = "g";
 const string COMPACT_PREFIX_ID = "c";
 const string INTERLEAVE_BITS_PREFIX_ID = "i";
+const string LAZY_INTERLEAVE_BITS_PREFIX_ID = "I";
 const string PIVOT_FILTER_PREFIX_ID = "p";
 const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
@@ -593,7 +594,8 @@ public:
     }
 
     string getName() {
-        return (compact?COMPACT_PREFIX_ID:"") + (xParams.interleaveBitsMode?INTERLEAVE_BITS_PREFIX_ID:"") +
+        return (compact?COMPACT_PREFIX_ID:"") + (xParams.interleaveBitsMode?(
+                    xParams.lazyInterleaveBitsMode?LAZY_INTERLEAVE_BITS_PREFIX_ID:INTERLEAVE_BITS_PREFIX_ID):"") +
             (xParams.pivotsFilterMode?(
                     xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
             (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +
