@@ -141,21 +141,20 @@ private:
     void compactation(const uint8_t *sequences) {
         if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8) {
             xParams.bytesPerSequence /= 2;
-            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence * 2]();
+            const uint32_t nibblePackedBytes = xParams.d * xParams.bytesPerSequence;
+            seqAugmention = new uint8_t[nibblePackedBytes * 2];
             uint8_t* x = (uint8_t*) sequences;
             uint8_t *y = seqAugmention;
-            uint8_t *z = seqAugmention + xParams.d * xParams.bytesPerSequence;
-            const uint32_t nibblePackedBytes = xParams.d * xParams.bytesPerSequence;
-            for(int i = 0; i < nibblePackedBytes; i++) {
-                *y = *(x++);
-                *y += *(x++)*16;
+            uint8_t *z = seqAugmention + nibblePackedBytes;
+            for(int i = 0; i < nibblePackedBytes; i++, x += 2) {
+                *y = *x + *(x + 1) * 16;
                 *(z++) = *(y++) + 128 + 8;
             }
             seq1 = seqAugmention;
             seq2 = seqAugmention + xParams.d * xParams.bytesPerSequence;
             if (xParams.verbose) cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
         } else if (sizeof(uint) == sizeof(uint16_t)) {
-            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence]();
+            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence];
             uint16_t* x = (uint16_t*) sequences;
             uint16_t* z = (uint16_t*) seqAugmention;
             const uint32_t length = xParams.d * xParams.bytesPerSequence / 2;
@@ -166,7 +165,7 @@ private:
             seq2 = seqAugmention;
             if (xParams.verbose) cout << "augmented... " << " (" << time_millis() << " msec)" << endl;
         } else {
-            fprintf(stderr, "ERROR: unsupported alphabet size for nibblification.\n");
+            fprintf(stderr, "ERROR: unsupported alphabet size for compacting.\n");
             exit(EXIT_FAILURE);
         }
     }
