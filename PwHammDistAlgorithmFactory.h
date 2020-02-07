@@ -9,7 +9,7 @@ extern map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap;
 
 PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams);
 
-class BrutePwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
+class ConfigurablePwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
 private:
     static const int SHORTCIRCUIT_DISPATCH_BIT = 0;
     static const int COMPACT_DISPATCH_BIT = 1;
@@ -17,7 +17,7 @@ private:
 
     template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact>
     static PwHammDistAlgorithm* getBrutePwHammAlgorithmInstanceTemplate(ExperimentParams &xParams) {
-        return new BrutePwHammDistAlgorithm<uint, shortcircuit, binaryAlphabet, compact>(xParams);
+        return new ConfigurablePwHammDistAlgorithm<uint, shortcircuit, binaryAlphabet, compact>(xParams);
     }
 
     template<typename uint, bool binaryMode, std::size_t...Is>
@@ -40,7 +40,7 @@ private:
 
 
 public:
-    BrutePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory("brute-force") {};
+    ConfigurablePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory("brute-force") {};
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
         if (xParams.binaryMode)

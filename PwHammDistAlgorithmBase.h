@@ -43,7 +43,7 @@ public:
 };
 
 template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact = false>
-class BrutePwHammDistAlgorithm : public PwHammDistAlgorithm {
+class ConfigurablePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
 
@@ -528,14 +528,14 @@ private:
     };
 
 public:
-    BrutePwHammDistAlgorithm(ExperimentParams &xParams): PwHammDistAlgorithm(xParams), seqInULLs(xParams.bytesPerSequence / 8) {
+    ConfigurablePwHammDistAlgorithm(ExperimentParams &xParams): PwHammDistAlgorithm(xParams), seqInULLs(xParams.bytesPerSequence / 8) {
         if (xParams.bytesPerSequence % xParams.ALINGMENT_IN_BYTES != 0) {
             fprintf(stderr, "ERROR: brute algorithm does not support unaligned data.\n");
             exit(EXIT_FAILURE);
         }
     };
 
-    virtual ~BrutePwHammDistAlgorithm() {
+    virtual ~ConfigurablePwHammDistAlgorithm() {
         if (pivotDist)
             delete[] pivotDist;
         if (seqAugmention)
@@ -600,6 +600,41 @@ public:
             (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +
             (shortcircuit?"":NO_SHORT_CIRCUIT_PREFIX_ID) + BRUTE_FORCE_ID +
             (binaryAlphabet?BINARY_MODE_ID_SUFFIX:"");
+    }
+};
+
+class TwoLevelFilterBasedPwHammDistAlgorithm : public PwHammDistAlgorithm {
+private:
+    PwHammDistAlgorithm* preFilterAlgorithm;
+    PwHammDistAlgorithm* postVerificationAlgorithm;
+
+public:
+    TwoLevelFilterBasedPwHammDistAlgorithm(ExperimentParams &xParams,
+                                         PwHammDistAlgorithm *preFilterAlgorithm,
+                                         PwHammDistAlgorithm *postAlgorithm) : PwHammDistAlgorithm(
+            xParams), preFilterAlgorithm(preFilterAlgorithm), postVerificationAlgorithm(
+            postAlgorithm) {}
+
+    virtual ~TwoLevelFilterBasedPwHammDistAlgorithm() {
+        delete(postVerificationAlgorithm);
+        delete(preFilterAlgorithm);
+    }
+
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+        if (xParams.verbose) cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
+        auto qRes = preFilterAlgorithm->findSimilarSequences(sequences);
+        if (xParams.verbose) cout << "filtered pairs count: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
+        vector<pair<uint16_t, uint16_t>> res = postVerificationAlgorithm->findSimilarSequences(sequences, qRes);
+        return res;
+    };
+
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+                                                          const vector<pair<uint16_t, uint16_t>> pairs) {
+        return postVerificationAlgorithm->findSimilarSequences(sequences, pairs);
+    }
+
+    string getName() {
+        return preFilterAlgorithm->getName() + "+" + postVerificationAlgorithm->getName();
     }
 };
 

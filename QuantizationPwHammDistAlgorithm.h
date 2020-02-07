@@ -35,6 +35,13 @@ public:
         }
     };
 
+    void cleanup() {
+        if (qSequences) {
+            delete[] qSequences;
+            qSequences = 0;
+        }
+    }
+
     virtual string getName() = 0;
 
     virtual ~BinaryQuantizer() {
@@ -102,43 +109,53 @@ class QuantizationBasedPwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     BinaryQuantizer<uint>* quantizer;
     PwHammDistAlgorithmFactory* quantizedFilterAlgorithmFactory;
-    PwHammDistAlgorithm* postAlgorithm;
     PwHammDistAlgorithm* qAlgorithm = 0;
+
+    void preprocessing(const uint8_t *sequences) {
+        quantizer->quantize(sequences, xParams);
+        if (xParams.verbose) cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
+        if (qAlgorithm) {
+            delete (qAlgorithm);
+            qAlgorithm = 0;
+        }
+        qAlgorithm = quantizedFilterAlgorithmFactory->getAlgorithmInstance(quantizer->getQxParams());
+    };
+
+    void postProcessing() {
+        quantizer->cleanup();
+    }
 
 public:
     QuantizationBasedPwHammDistAlgorithm(ExperimentParams &xParams, BinaryQuantizer<uint> *quantizer,
-            PwHammDistAlgorithmFactory *quantizedFilterAlgorithmFactory, PwHammDistAlgorithm *postAlgorithm) : PwHammDistAlgorithm(
-            xParams), quantizer(quantizer), quantizedFilterAlgorithmFactory(quantizedFilterAlgorithmFactory), postAlgorithm(
-            postAlgorithm) {}
+            PwHammDistAlgorithmFactory *quantizedFilterAlgorithmFactory) : PwHammDistAlgorithm(
+            xParams), quantizer(quantizer), quantizedFilterAlgorithmFactory(quantizedFilterAlgorithmFactory) {}
 
     virtual ~QuantizationBasedPwHammDistAlgorithm() {
         delete(quantizedFilterAlgorithmFactory);
-        delete(postAlgorithm);
         delete(quantizer);
         if (qAlgorithm)
             delete(qAlgorithm);
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
-        if (xParams.verbose) cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
-        quantizer->quantize(sequences, xParams);
-        if (xParams.verbose) cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
-        qAlgorithm = quantizedFilterAlgorithmFactory->getAlgorithmInstance(quantizer->getQxParams());
+        preprocessing(sequences);
         auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences());
-        if (xParams.verbose) cout << "filterCheck: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
-        vector<pair<uint16_t, uint16_t>> res = postAlgorithm->findSimilarSequences(sequences, qRes);
-        return res;
-    };
+        postProcessing();
+        return qRes;
+    }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
-        return postAlgorithm->findSimilarSequences(sequences, pairs);
+        preprocessing(sequences);
+        auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences(), pairs);
+        postProcessing();
+        return qRes;
     }
 
     string getName() {
         return QUATIZATION_BASED_FILTER_PWHD_ID + "+" +
             quantizer->getName() + "+" +
-            (qAlgorithm?qAlgorithm->getName():"UNKNOWN") + "+" + postAlgorithm->getName();
+            (qAlgorithm?qAlgorithm->getName():"UNKNOWN");
     }
 };
 

@@ -19,22 +19,25 @@ public:
             fprintf(stderr, "Quantization unsupported for binary dataset.\n");
             exit(EXIT_FAILURE);
         } else {
-            PwHammDistAlgorithm* postAlgorithm = BrutePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
-            PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new BrutePwHammDistAlgorithmFactory();
+            PwHammDistAlgorithm* preFilterAlgorithm;
+            PwHammDistAlgorithmFactory* binaryAlgorithmFactory = new ConfigurablePwHammDistAlgorithmFactory();
             switch(xParams.bytesPerElement) {
-                case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory, postAlgorithm);
-                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(xParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory, postAlgorithm);
-//                case 4: return new QuantizationBasedPwHammDistAlgorithm<uint32_t>(xParams, new SimpleBinaryQuantizer<uint32_t>(), binaryAlgorithmFactory, postAlgorithm);
+                case 1: preFilterAlgorithm = new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory);
+                    break;
+                case 2: preFilterAlgorithm = new QuantizationBasedPwHammDistAlgorithm<uint16_t>(xParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory);
+                    break;
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
             }
+            PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
+            return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
         }
     }
 };
 
 map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap =
-        {{BRUTE_FORCE_ID, new BrutePwHammDistAlgorithmFactory()},
+        {{BRUTE_FORCE_ID, new ConfigurablePwHammDistAlgorithmFactory()},
          {QUATIZATION_BASED_FILTER_PWHD_ID, new QuantizationBasedPwHammDistAlgorithmFactory()},
          };
 
