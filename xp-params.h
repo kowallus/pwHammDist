@@ -28,6 +28,10 @@ struct ExperimentParams {
     bool interleaveBitsMode = false;
     bool lazyInterleaveBitsMode = false;
 
+    // hashing-filter params
+
+    uint16_t hbf_L = 10;
+
     // extra params
 
     bool verbose = true;

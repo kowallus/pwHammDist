@@ -84,10 +84,10 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                                 "\n-n disable short-circuit"
                                 "\n-g sequences matched in groups (for bf algorithm)");
                 if (!xParams.isInBinaryMode()) {
-                    fprintf(stderr, "\n-c compact mode processing\n");
-                    fprintf(stderr, "\n-i interleaved bits mode (or -I with lazy evaluation)\n");
+                    fprintf(stderr, "\n-c compact mode processing");
+                    fprintf(stderr, "\n-i interleaved bits mode (or -I with lazy evaluation)");
                 }
-                fprintf(stderr, "\n-A ignore aligning sequences to 256-bit");
+                fprintf(stderr, "\n\n-A ignore aligning sequences to 256-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "To disable binary mode apply: -b 0\n\n");

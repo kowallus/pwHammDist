@@ -12,7 +12,7 @@ PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams) {
 
 class QuantizationBasedPwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
 public:
-    QuantizationBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("quantization-based")) {};
+    QuantizationBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("quantization-based filter")) {};
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
         if(xParams.isInBinaryMode()) {
@@ -36,8 +36,35 @@ public:
     }
 };
 
+class HashingBasedPwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
+public:
+    HashingBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("hashing-based filter")) {};
+
+    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
+        if(xParams.isInBinaryMode()) {
+            fprintf(stderr, "Hashing not implemented for binary dataset.\n");
+            exit(EXIT_FAILURE);
+        } else {
+            PwHammDistAlgorithm* preFilterAlgorithm;
+            switch(xParams.bytesPerElement) {
+                case 1: preFilterAlgorithm = new HashingBasedPwHammDistAlgorithm<uint8_t>(xParams);
+                    break;
+                case 2: preFilterAlgorithm = new HashingBasedPwHammDistAlgorithm<uint16_t>(xParams);
+                    break;
+                default:
+                    fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
+                    exit(EXIT_FAILURE);
+            }
+            PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
+            return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
+        }
+    }
+};
+
+
 map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap =
         {{BRUTE_FORCE_ID, new ConfigurablePwHammDistAlgorithmFactory()},
          {QUATIZATION_BASED_FILTER_PWHD_ID, new QuantizationBasedPwHammDistAlgorithmFactory()},
+         {HASHING_BASED_FILTER_PWHD_ID, new HashingBasedPwHammDistAlgorithmFactory()}
          };
 

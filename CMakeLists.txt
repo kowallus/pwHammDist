@@ -18,11 +18,17 @@ set(BENCH_FILES xp-params.h bench/cli.cpp bench/cli.h bench/params.h bench/bench
 set(HELPER_FILES
         utils/byteswap.h utils/helper.cpp utils/helper.h utils/testdata.h)
 
+set(HASHES_FILES
+        hashes/Hashes.h
+        hashes/metrohash64.cpp hashes/metrohash64.h hashes/platform.h
+        hashes/xxhash.c hashes/xxhash.h
+        hashes/city.cpp hashes/city.h hashes/citycrc.h)
+
 set(PWHD_FILES
-        ${HELPER_FILES} ${BENCH_FILES}
+        ${HELPER_FILES} ${BENCH_FILES} ${HASHES_FILES}
         PwHammDistAlgorithmBase.h PwHammDistAlgorithmFactory.cpp PwHammDistAlgorithmFactory.h
         QuantizationPwHammDistAlgorithm.h
-        )
+        HashingPwHammDistAlgorithm.h)
 
 add_executable(bench-binary bench/main-binary.cpp ${PWHD_FILES})
 add_executable(bench-dataset bench/main-dataset.cpp ${PWHD_FILES} )
