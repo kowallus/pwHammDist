@@ -10,8 +10,8 @@ template<typename uint>
 class HashingBasedPwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
 
-    const static uint8_t HASH_SIZE_ORDER = 18;
-    const static uint32_t HASH_SLOTS = ((uint32_t) 1) << (HASH_SIZE_ORDER - 1);
+    const static uint8_t HASH_BITS = 11;
+    const static uint32_t HASH_SLOTS = ((uint32_t) 1) << (HASH_BITS - 1);
     const static uint32_t HASH_MASK = HASH_SLOTS - 1;
     int htSize;
 
@@ -50,9 +50,9 @@ public:
             uint8_t* x = (uint8_t*) sequences + (size_t) i * sizeof(uint);
             for(int j = 0; j < xParams.d; j++) {
                 uint32_t hash = hashFunc(x);
-                if (!hTCounts[hash])
-                    hTKeys.push_back(hash);
                 hT[xParams.d * hash + hTCounts[hash]++] = j;
+                if (hTCounts[hash] == 2)
+                    hTKeys.push_back(hash);
                 x += xParams.bytesPerSequence;
             }
             for(uint32_t k = 0; k < hTKeys.size(); k++) {
