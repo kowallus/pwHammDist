@@ -30,7 +30,7 @@ struct ExperimentParams {
 
     // hashing-filter params
 
-    uint16_t hbf_L = 10;
+    uint16_t hbf_L = 11;
 
     // extra params
 
@@ -70,6 +70,10 @@ struct ExperimentParams {
 
     void enableDatasetMode() {
         datasetMode = true;
+    }
+
+    void disableFiltration() {
+        pivotsFilterMode = false;
     }
 };
 

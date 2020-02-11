@@ -22,8 +22,8 @@ const string BINARY_MODE_ID_SUFFIX = "_bin";
 
 class PwHammDistAlgorithm {
 protected:
-    ExperimentParams &xParams;
-    PwHammDistAlgorithm(ExperimentParams &xParams): xParams(xParams) {};
+    ExperimentParams xParams;
+    PwHammDistAlgorithm(ExperimentParams xParams): xParams(xParams) {};
 
 public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t *sequences) = 0;
@@ -39,7 +39,7 @@ private:
 public:
     PwHammDistAlgorithmFactory(string algorithmName): algorithmName(algorithmName) { }
     string getAlgorithmName() { return algorithmName; }
-    virtual PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) = 0;
+    virtual PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) = 0;
 };
 
 template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact = false>
@@ -609,11 +609,11 @@ private:
     PwHammDistAlgorithm* postVerificationAlgorithm;
 
 public:
-    TwoLevelFilterBasedPwHammDistAlgorithm(ExperimentParams &xParams,
+    TwoLevelFilterBasedPwHammDistAlgorithm(ExperimentParams xParams,
                                          PwHammDistAlgorithm *preFilterAlgorithm,
                                          PwHammDistAlgorithm *postAlgorithm) : PwHammDistAlgorithm(
             xParams), preFilterAlgorithm(preFilterAlgorithm), postVerificationAlgorithm(
-            postAlgorithm) {}
+            postAlgorithm) { }
 
     virtual ~TwoLevelFilterBasedPwHammDistAlgorithm() {
         delete(postVerificationAlgorithm);

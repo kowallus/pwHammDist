@@ -1,6 +1,6 @@
 #include "PwHammDistAlgorithmFactory.h"
 
-PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams) {
+PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams xParams) {
     auto typeIt = pwHammDistAlgorithmTypesMap.find(xParams.algorithmID);
     if (typeIt == pwHammDistAlgorithmTypesMap.end()) {
         fprintf(stderr, "Invalid method type ID: %s\n", xParams.algorithmID.c_str());
@@ -14,7 +14,7 @@ class QuantizationBasedPwHammDistAlgorithmFactory: public PwHammDistAlgorithmFac
 public:
     QuantizationBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("quantization-based filter")) {};
 
-    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
+    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) {
         if(xParams.isInBinaryMode()) {
             fprintf(stderr, "Quantization unsupported for binary dataset.\n");
             exit(EXIT_FAILURE);
@@ -30,6 +30,7 @@ public:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
             }
+            xParams.disableFiltration();
             PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
             return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
         }
@@ -40,7 +41,7 @@ class HashingBasedPwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory 
 public:
     HashingBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("hashing-based filter")) {};
 
-    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
+    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) {
         if(xParams.isInBinaryMode()) {
             fprintf(stderr, "Hashing not implemented for binary dataset.\n");
             exit(EXIT_FAILURE);
@@ -55,6 +56,7 @@ public:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
             }
+            xParams.disableFiltration();
             PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
             return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
         }

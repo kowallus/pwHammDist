@@ -8,7 +8,7 @@
 
 extern map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap;
 
-PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams &xParams);
+PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams xParams);
 
 class ConfigurablePwHammDistAlgorithmFactory: public PwHammDistAlgorithmFactory {
 private:
@@ -43,7 +43,7 @@ private:
 public:
     ConfigurablePwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory("brute-force") {};
 
-    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams &xParams) {
+    PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) {
         if (xParams.binaryMode)
             return runtimeDispatchAlgorithmInstance<true, uint8_t>(xParams);
         switch(xParams.bytesPerElement) {

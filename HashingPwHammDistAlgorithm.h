@@ -22,6 +22,11 @@ private:
         htSize = xParams.d * HASH_SLOTS;
         h = xParams.m / (xParams.k + xParams.hbf_L);
         hInBytes = h * sizeof(uint);
+        if (xParams.verbose) {
+            cout << "Hash bits: " << (int) HASH_BITS << "; ";
+            cout << "L: " << xParams.hbf_L << "; ";
+            cout << "h: " << h << endl;
+        }
     };
 
     void postProcessing() {
@@ -39,27 +44,30 @@ public:
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         preprocessing(sequences);
-        vector<uint16_t> hT(htSize);
-        vector<uint16_t> hTCounts(HASH_SLOTS);
+        vector<vector<uint16_t>> hT(HASH_SLOTS);
         vector<uint32_t> hTKeys;
         vector<uint16_t> pairsCounter(xParams.d * xParams.d, 0);
         vector<pair<uint16_t, uint16_t>> res;
+        if (xParams.verbose)
+            cout << "hT initialization... " << " (" << time_millis() << " msec)" << endl;
         for(int i = 0; i < xParams.m; i += h) {
-            memset(&hTCounts[0], 0, HASH_SLOTS * sizeof(uint16_t));
+            for(int s = 0; s < HASH_SLOTS; s++)
+                hT[s].clear();
             hTKeys.clear();
             uint8_t* x = (uint8_t*) sequences + (size_t) i * sizeof(uint);
             for(int j = 0; j < xParams.d; j++) {
                 uint32_t hash = hashFunc(x);
-                hT[xParams.d * hash + hTCounts[hash]++] = j;
-                if (hTCounts[hash] == 2)
+                hT[hash].push_back(j);
+                if (hT[hash].size() == 2)
                     hTKeys.push_back(hash);
                 x += xParams.bytesPerSequence;
             }
+            int tmp = 0;
             for(uint32_t k = 0; k < hTKeys.size(); k++) {
                 uint32_t key = hTKeys[k];
-                uint16_t* hTSlot = &hT[xParams.d * key];
-                for (int u = 0; u < hTCounts[key] - 1; u++) {
-                    for (int v = u + 1; v < hTCounts[key]; v++) {
+                vector<uint16_t>& hTSlot = hT[key];
+                for (int u = 0; u < hTSlot.size() - 1; u++) {
+                    for (int v = u + 1; v < hTSlot.size(); v++) {
                         uint16_t i1 = hTSlot[u];
                         uint16_t i2 = hTSlot[v];
                         if (++pairsCounter[i1 * xParams.d + i2] == xParams.hbf_L)
