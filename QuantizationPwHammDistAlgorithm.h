@@ -7,6 +7,8 @@ const string SIMPLE_BINARY_QUANTIZER_ID = "sbq";
 
 const string QUATIZATION_BASED_FILTER_PWHD_ID = "qbf";
 
+const string QUATIZATION_AND_PIVOTS_BASED_FILTER_PWHD_ID = "qpbf";
+
 const string QUATIZATION_HASHING_BASED_FILTER_PWHD_ID = "qhbf";
 
 template<typename uint>

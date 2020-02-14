@@ -12,10 +12,13 @@ PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams xParams) {
 
 class QuantizationBasedPwHammDistPreFilterFactory: public PwHammDistAlgorithmFactory {
     PwHammDistAlgorithmFactory* binaryAlgorithmFactory;
+    bool pivotsFilterMode;
+
 public:
-    QuantizationBasedPwHammDistPreFilterFactory(PwHammDistAlgorithmFactory* binaryAlgorithmFactory):
-        PwHammDistAlgorithmFactory(string("quantization-based filter")),
-        binaryAlgorithmFactory(binaryAlgorithmFactory){};
+    QuantizationBasedPwHammDistPreFilterFactory(PwHammDistAlgorithmFactory* binaryAlgorithmFactory, bool pivotsFilterMode):
+        PwHammDistAlgorithmFactory(string("quantization-based filter") + (pivotsFilterMode?" with pivots":"") +
+            " and " + binaryAlgorithmFactory->getAlgorithmName()),
+        binaryAlgorithmFactory(binaryAlgorithmFactory), pivotsFilterMode(pivotsFilterMode){};
 
     virtual ~QuantizationBasedPwHammDistPreFilterFactory() {
         delete(binaryAlgorithmFactory);
@@ -26,9 +29,11 @@ public:
             fprintf(stderr, "Quantization unsupported for binary dataset.\n");
             exit(EXIT_FAILURE);
         } else {
+            ExperimentParams qxParams = xParams;
+            qxParams.pivotsFilterMode = pivotsFilterMode;
             switch(xParams.bytesPerElement) {
-                case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(xParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory);
-                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(xParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory);
+                case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(qxParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory);
+                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(qxParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory);
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
@@ -75,19 +80,19 @@ public:
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) {
         PwHammDistAlgorithm* preFilterAlgorithm = preFilterAlgorithmFactory->getAlgorithmInstance(xParams);
-        xParams.disableFiltration();
         PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
         return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
     }
 };
 
-
 map<string, PwHammDistAlgorithmFactory*> pwHammDistAlgorithmTypesMap =
         {{BRUTE_FORCE_ID, new ConfigurablePwHammDistAlgorithmFactory()}
          ,{QUATIZATION_BASED_FILTER_PWHD_ID, new FilterBasedPwHammDistAlgorithmFactory(
-                 new QuantizationBasedPwHammDistPreFilterFactory(new ConfigurablePwHammDistAlgorithmFactory()))}
+                 new QuantizationBasedPwHammDistPreFilterFactory(new ConfigurablePwHammDistAlgorithmFactory(), false))}
+         ,{QUATIZATION_AND_PIVOTS_BASED_FILTER_PWHD_ID, new FilterBasedPwHammDistAlgorithmFactory(
+                new QuantizationBasedPwHammDistPreFilterFactory(new ConfigurablePwHammDistAlgorithmFactory(), true))}
          ,{HASHING_BASED_FILTER_PWHD_ID, new FilterBasedPwHammDistAlgorithmFactory(new HashingBasedPwHammDistPreFilterFactory())}
          ,{QUATIZATION_HASHING_BASED_FILTER_PWHD_ID, new FilterBasedPwHammDistAlgorithmFactory(
-                new QuantizationBasedPwHammDistPreFilterFactory(new HashingBasedPwHammDistPreFilterFactory()))}
+                new QuantizationBasedPwHammDistPreFilterFactory(new HashingBasedPwHammDistPreFilterFactory(), false))}
          };
 

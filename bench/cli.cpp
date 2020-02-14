@@ -9,7 +9,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
             std::string(xParams.isInBinaryMode()?"":"ciI") +
-            std::string("r:a:pPngAvq?");
+            std::string("r:a:pengAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
@@ -27,8 +27,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'n':
                 xParams.shortCircuitMode = false;
                 break;
-            case 'P':
+            case 'e':
                 xParams.pivotsElectionMode = true;
+                break;
             case 'p':
                 xParams.pivotsFilterMode = true;
                 break;
@@ -76,11 +77,11 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 else
                     fprintf(stderr, "m d ");
                 fprintf(stderr, "k\n\n");
-                fprintf(stderr, "algorithm ID : core algorithm name\n");
+                fprintf(stderr, "algorithm ID : core algorithm variant\n");
                 for(pair<string, PwHammDistAlgorithmFactory*> p: pwHammDistAlgorithmTypesMap) {
                     fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getAlgorithmName().c_str());
                 }
-                fprintf(stderr, "\n-p pivot filter mode (or -P with pivot election)"
+                fprintf(stderr, "\n-p pivot filter mode (add -e for pivot election)"
                                 "\n-n disable short-circuit"
                                 "\n-g sequences matched in groups (for bf algorithm)");
                 if (!xParams.isInBinaryMode()) {
