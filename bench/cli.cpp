@@ -64,7 +64,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-P] [-g] \n"
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
                     fprintf(stderr, "[-c] [-i] [-I]");
