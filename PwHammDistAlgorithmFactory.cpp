@@ -42,11 +42,15 @@ public:
     HashingBasedPwHammDistAlgorithmFactory():PwHammDistAlgorithmFactory(string("hashing-based filter")) {};
 
     PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) {
+        PwHammDistAlgorithm* preFilterAlgorithm;
         if(xParams.isInBinaryMode()) {
-            fprintf(stderr, "Hashing not implemented for binary dataset.\n");
-            exit(EXIT_FAILURE);
+            ExperimentParams bxParams = xParams;
+            bxParams.binaryMode = false;
+            bxParams.alphabetSize = UINT8_MAX;
+            bxParams.bytesPerElement = 1;
+            bxParams.m = bxParams.bytesPerSequence;
+            preFilterAlgorithm = new HashingBasedPwHammDistAlgorithm<uint8_t>(bxParams);
         } else {
-            PwHammDistAlgorithm* preFilterAlgorithm;
             switch(xParams.bytesPerElement) {
                 case 1: preFilterAlgorithm = new HashingBasedPwHammDistAlgorithm<uint8_t>(xParams);
                     break;
@@ -56,10 +60,10 @@ public:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
             }
-            xParams.disableFiltration();
-            PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
-            return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
         }
+        xParams.disableFiltration();
+        PwHammDistAlgorithm* postVerificationAlgorithm = ConfigurablePwHammDistAlgorithmFactory().getAlgorithmInstance(xParams);
+        return new TwoLevelFilterBasedPwHammDistAlgorithm(xParams, preFilterAlgorithm, postVerificationAlgorithm);
     }
 };
 
