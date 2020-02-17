@@ -65,7 +65,7 @@ void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, 
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
             (xParams.isBitsPerPackedEnabled()?"\tbits_packed":"");
         if (bParams.repeats > 1)
-            cout << "\trepeats\tmax/min time [ms]";
+            cout << "\trepeats\tmax/min time [us]";
         cout <<  endl;
     }
     resultsToStream(cout, algorithm, bParams, xParams, times);
