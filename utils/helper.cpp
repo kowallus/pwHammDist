@@ -50,6 +50,15 @@ unsigned long long int time_millis() {
     return time_millis(chronocheckpoint);
 }
 
+unsigned long long int time_micros(chrono::steady_clock::time_point checkpoint) {
+    chrono::nanoseconds time_span = chrono::duration_cast<chrono::nanoseconds>(chrono::steady_clock::now() - checkpoint);
+    return (double)time_span.count() / 1000.0;
+}
+
+unsigned long long int time_micros() {
+    return time_micros(chronocheckpoint);
+}
+
 std::mt19937 randgenerator;
 
 const size_t chunkSize = 10000000;

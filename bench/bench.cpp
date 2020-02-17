@@ -44,7 +44,7 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
         cleanCache();
         time_checkpoint();
         brute += algorithm->findSimilarSequences(sequences).size();
-        times.push_back(time_millis());
+        times.push_back(time_micros());
     }
     logResults(algorithm, bParams, xParams, times);
 
@@ -71,14 +71,53 @@ void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, 
     resultsToStream(cout, algorithm, bParams, xParams, times);
 }
 
+string microSecToMillis(double medianTime, uint8_t minDigits2show) {
+    string millisTime = toString(medianTime);
+    if (millisTime.length() <= 3) {
+        while(millisTime.length() < 3)
+            millisTime.insert(0, "0");
+        millisTime.insert(0, "0.");
+    } else {
+        if (toString(medianTime + 1).length() > millisTime.length())
+            millisTime = toString(++medianTime);
+        if (minDigits2show + 3 <= millisTime.length()) {
+            if (millisTime[millisTime.length() - 3] >= '5')
+                medianTime = medianTime / 1000 + 1;
+            else
+                medianTime /= 1000;
+            millisTime = toString(medianTime);
+        } else {
+            millisTime.insert(millisTime.length() - 3, ".");
+            bool inc = false;
+            while (millisTime.length() > minDigits2show + 1) {
+                inc = millisTime[millisTime.length() - 1] >= '5';
+                millisTime.pop_back();
+            }
+            for (int i = millisTime.length(); i-- > 0 && inc;) {
+                if (millisTime[i] == '.')
+                    continue;
+                if (millisTime[i] == '9')
+                    millisTime[i] = '0';
+                else {
+                    millisTime[i]++;
+                    inc = false;
+                }
+            }
+            if (inc)
+                millisTime.insert(0, "1");
+        }
+    }
+    return alignRight(millisTime, 8);
+}
+
 void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams,
                      const ExperimentParams &xParams, const vector<double> &times) {
     double maxTime = times[bParams.repeats - 1];
     double medianTime = times[times.size()/2];
     double minTime = times[0];
-    outStream << alignRight(toString(medianTime), 8) << "\t" << alignRight(algorithm->getName(), 20) <<
-        "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
-        "\t" << alignRight(toString(xParams.alphabetSize), 5) << "\t" << alignRight(toString(xParams.k), 5);
+    outStream << microSecToMillis(medianTime, 3) << "\t" << alignRight(algorithm->getName(), 20) <<
+              "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
+              "\t" << alignRight(toString(xParams.alphabetSize), 5) << "\t" << alignRight(toString(xParams.k), 5);
     if (xParams.isOnesInPromilesEnabled())
         outStream << "\t" << alignRight(toString(xParams.onesInPromiles),7);
     if (xParams.isBitsPerPackedEnabled())
