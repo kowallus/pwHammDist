@@ -21,6 +21,10 @@ private:
     void preprocessing(const uint8_t *sequences) {
         htSize = xParams.d * HASH_SLOTS;
         h = xParams.m / (xParams.k + xParams.hbf_L);
+        if (!h) {
+            fprintf(stderr, "ERROR: sequence to short for hashing (elements = %d; k = %d; L = %d).\n", xParams.m, xParams.k, xParams.hbf_L);
+            exit(EXIT_FAILURE);
+        }
         hInBytes = h * sizeof(uint);
         if (xParams.verbose) {
             cout << "Hash bits: " << (int) HASH_BITS << "; ";
