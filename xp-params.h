@@ -32,6 +32,10 @@ struct ExperimentParams {
 
     uint16_t hbf_L = 11;
 
+    // quantization params
+
+    uint8_t quantizationBits = 3;
+
     // extra params
 
     bool verbose = true;
