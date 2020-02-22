@@ -6,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <random>
+#include "hashes/Hashes.h"
 
 using namespace std;
 
@@ -17,6 +18,7 @@ const string INTERLEAVE_BITS_PREFIX_ID = "i";
 const string LAZY_INTERLEAVE_BITS_PREFIX_ID = "I";
 const string PIVOT_FILTER_PREFIX_ID = "p";
 const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
+const string PERFECT_HASHING_PREFIX_ID = "H";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
 
 
@@ -42,7 +44,7 @@ public:
     virtual PwHammDistAlgorithm* getAlgorithmInstance(ExperimentParams xParams) = 0;
 };
 
-template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact = false>
+template <typename uint, bool shortcircuit, bool binaryAlphabet, bool compact>
 class ConfigurablePwHammDistAlgorithm : public PwHammDistAlgorithm {
 private:
     const uint16_t seqInULLs;
@@ -64,9 +66,20 @@ private:
     uint16_t augSeqPerBitInULLs;
     uint8_t bitsPerElement;
 
+    // perfectHashing mode
+    uint64_t* seqBlockHashes = 0;
+    uint16_t hashedBlockInBytes;
+    uint16_t nonhashedBytes;
+    uint16_t hashBlocksCount;
+    uint32_t hashHitStats = 0;
+    uint32_t hashMissStats = 0;
+
     void preprocessing(const uint8_t *sequences) {
         origSeq = (uint8_t*) sequences;
         origBytesPerSequence = xParams.bytesPerSequence;
+        if (xParams.perfectHashing) {
+            perfectHashSequences(sequences);
+        }
         if (compact) {
             compactation(sequences);
         } else if (xParams.interleaveBitsMode) {
@@ -91,51 +104,152 @@ private:
             delete[] seqAugmention;
             seqAugmention = 0;
         }
+        if (seqBlockHashes) {
+            if (xParams.verbose)
+                cout << "perfect-hashing hits vs misses: " << hashHitStats << " / " << hashMissStats << endl;
+            hashHitStats = 0;
+            hashMissStats = 0;
+            delete[] seqBlockHashes;
+            seqBlockHashes = 0;
+        }
         if (pivotDist) {
             delete[] pivotDist;
             pivotDist = 0;
         }
     }
 
-
     template<bool allowShortCircuit>
     uint16_t findSequencesDistance(const void* seq1, const void* seq2) {
         uint16_t dist;
-        if (binaryAlphabet)
-            dist = (allowShortCircuit && shortcircuit)?hammingDistanceBinary((uint64_t*) seq1, (uint64_t*) seq2, seqInULLs, xParams.k):
-                   hammingDistanceBinary((uint64_t*) seq1, (uint64_t*)seq2, seqInULLs);
-        else {
+        if (binaryAlphabet) {
+                dist = (allowShortCircuit && shortcircuit) ? hammingDistanceBinary((uint64_t *) seq1, (uint64_t *) seq2,
+                                                                                   seqInULLs, xParams.k) :
+                       hammingDistanceBinary((uint64_t *) seq1, (uint64_t *) seq2, seqInULLs);
+        } else {
             if (compact) {
                 if (sizeof(uint) == sizeof(uint8_t)) {
                     assert(xParams.alphabetSize <= 8);
-                    dist = (allowShortCircuit && shortcircuit)? hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
-                                                          xParams.bytesPerSequence * 2, xParams.k):
-                                        hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
+                                                                                                (uint64_t *) seq2,
+                                                                                                xParams.bytesPerSequence *
+                                                                                                2, xParams.k) :
+                           hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
                                                           xParams.bytesPerSequence * 2);
                 } else if (sizeof(uint) == sizeof(uint16_t)) {
-                    dist = (allowShortCircuit && shortcircuit)? hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
-                                                                 xParams.bytesPerSequence / 2, xParams.k):
-                                        hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
-                                                                 xParams.bytesPerSequence / 2);
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceAugmented16bit((uint64_t *) seq1,
+                                                                                               (uint64_t *) seq2,
+                                                                                               xParams.bytesPerSequence /
+                                                                                               2, xParams.k) :
+                           hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
+                                                         xParams.bytesPerSequence / 2);
                 }
             } else {
                 if (xParams.interleaveBitsMode) {
                     if (xParams.lazyInterleaveBitsMode)
-                        dist = (allowShortCircuit && shortcircuit) ? lazyHammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
-                            augSeqPerBitInULLs, bitsPerElement, xParams.k):
-                                lazyHammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs , bitsPerElement);
+                        dist = (allowShortCircuit && shortcircuit) ? lazyHammingInterleavedBitsDistance(
+                                (uint64_t *) seq1, (uint64_t *) seq2,
+                                augSeqPerBitInULLs, bitsPerElement, xParams.k) :
+                               lazyHammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
+                                                                  augSeqPerBitInULLs, bitsPerElement);
                     else
-                        dist = (allowShortCircuit && shortcircuit) ? hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2,
-                                                                                                    augSeqPerBitInULLs, bitsPerElement, xParams.k):
-                               hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs, bitsPerElement);
+                        dist = (allowShortCircuit && shortcircuit) ? hammingInterleavedBitsDistance((uint64_t *) seq1,
+                                                                                                    (uint64_t *) seq2,
+                                                                                                    augSeqPerBitInULLs,
+                                                                                                    bitsPerElement,
+                                                                                                    xParams.k) :
+                               hammingInterleavedBitsDistance((uint64_t *) seq1, (uint64_t *) seq2, augSeqPerBitInULLs,
+                                                              bitsPerElement);
                 } else {
-                    dist = (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2, xParams.m,
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2,
+                                                                                 xParams.m,
                                                                                  xParams.k) :
                            hammingDistance((uint *) seq1, (uint *) seq2, xParams.m);
                 }
             }
         }
         return dist;
+    }
+
+    template<bool allowShortCircuit>
+    uint16_t findSubSequencesDistance(const void* seq1start, const void* seq2start, uint16_t offsetByte, uint16_t lengthBytes, uint16_t dist) {
+        if (binaryAlphabet) {
+            uint8_t* seq1 = (uint8_t*) seq1start + offsetByte;
+            uint8_t* seq2 = (uint8_t*) seq2start + offsetByte;
+            const uint32_t lengthInULLs = lengthBytes / 8;
+            dist += (allowShortCircuit && shortcircuit) ? hammingDistanceBinary((uint64_t *) seq1, (uint64_t *) seq2,
+                                                                                lengthInULLs, xParams.k - dist) :
+                    hammingDistanceBinary((uint64_t *) seq1, (uint64_t *) seq2, lengthInULLs);
+        } else {
+            if (compact) {
+                if (sizeof(uint) == sizeof(uint8_t)) {
+                    uint8_t* seq1 = (uint8_t*) seq1start + offsetByte / 2;
+                    uint8_t* seq2 = (uint8_t*) seq2start + offsetByte / 2;
+                    assert(xParams.alphabetSize <= 8);
+                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
+                            (uint64_t *) seq2, lengthBytes * 2, xParams.k - dist) :
+                           hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
+                                                          lengthBytes * 2);
+                } else if (sizeof(uint) == sizeof(uint16_t)) {
+                    uint8_t* seq1 = (uint8_t*) seq1start + offsetByte;
+                    uint8_t* seq2 = (uint8_t*) seq2start + offsetByte;
+                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceAugmented16bit((uint64_t *) seq1,
+                            (uint64_t *) seq2, lengthBytes / 2, xParams.k - dist) :
+                           hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
+                                                         lengthBytes / 2);
+                }
+            } else {
+                if (xParams.interleaveBitsMode) {
+                    fprintf(stderr, "ERROR: unsupported interleaved bits with perfect hashing modes.\n");
+                    exit(EXIT_FAILURE);
+                } else {
+                    uint8_t* seq1 = (uint8_t*) seq1start + offsetByte;
+                    uint8_t* seq2 = (uint8_t*) seq2start + offsetByte;
+                    dist += (allowShortCircuit && shortcircuit) ? hammingDistance((uint *) seq1, (uint *) seq2,
+                            lengthBytes / sizeof(uint), xParams.k - dist) :
+                           hammingDistance((uint *) seq1, (uint *) seq2, lengthBytes / sizeof(uint));
+                }
+            }
+        }
+        return dist;
+    }
+
+    template<bool allowShortCircuit>
+    uint16_t findSequencesDistanceWithPerfectHash(const uint64_t* seq1hashes, const uint64_t* seq2hashes, const void* seq1, const void* seq2) {
+        uint16_t dist = 0;
+        for (int b = 0; b < hashBlocksCount; b++) {
+            if (seq1hashes[b] != seq2hashes[b]) {
+                hashMissStats++;
+                dist += findSubSequencesDistance<allowShortCircuit>(seq1, seq2, b * hashedBlockInBytes,
+                                                                    hashedBlockInBytes, dist);
+                if (allowShortCircuit && shortcircuit && dist > xParams.k)
+                    return dist;
+            } else
+                hashHitStats++;
+        }
+        dist += findSubSequencesDistance<allowShortCircuit>(seq1, seq2, hashBlocksCount * hashedBlockInBytes,
+                                                            nonhashedBytes, dist);
+        return dist;
+    }
+
+    uint64_t hashFunc(uint8_t *x) {
+        return XXH64((const void*)x, hashedBlockInBytes, (uint32_t) 9876543210UL);
+    }
+
+    void perfectHashSequences(const uint8_t *sequences) {
+        hashBlocksCount = seqInULLs / xParams.hashBlockLengthInULLs;
+        hashedBlockInBytes = xParams.hashBlockLengthInULLs * 8;
+        nonhashedBytes = xParams.bytesPerSequence - hashedBlockInBytes * hashBlocksCount;
+        seqBlockHashes = new uint64_t[xParams.d * hashBlocksCount];
+        uint64_t* y = seqBlockHashes;
+        for(int i = 0; i < xParams.d; i++) {
+            uint64_t* x = ((uint64_t*) sequences) + i * seqInULLs;
+            for(int j = 0; j < hashBlocksCount; j++) {
+                *y++ = hashFunc((uint8_t*) x);
+                // COLLISION CHECKING NOT IMPLEMENTED
+                x += xParams.hashBlockLengthInULLs;
+            }
+        }
+        if (xParams.verbose) cout << "hashed... " << " (" << time_millis() << " msec)" << endl;
     }
 
     void compactation(const uint8_t *sequences) {
@@ -432,6 +546,7 @@ private:
         return inconclusive;
     }
 
+    template<bool usePerfectHashing>
     vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingControlPivot() {
         vector<uint16_t> pivotRank(xParams.d);
         for(int i = 0; i < xParams.d; i++)
@@ -464,7 +579,7 @@ private:
                         break;
                     }
                 }
-                if (filterRes == similar || (filterRes == inconclusive && testSequencesSimilarity<false>(i, j)))
+                if (filterRes == similar || (filterRes == inconclusive && testSequencesSimilarity<false, usePerfectHashing>(i, j)))
                     res.push_back(pair<uint16_t, uint16_t>(i, j));
                 rj++;
             }
@@ -473,11 +588,12 @@ private:
     };
 
 
+    template<bool usePerfectHashing>
     vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingStandardBrute() {
         vector<pair<uint16_t, uint16_t>> res;
         for(int i = 0; i < xParams.d - 1; i++) {
             for (int j = i + 1; j < xParams.d; j++) {
-                if (testSequencesSimilarity<false>(i, j)) {
+                if (testSequencesSimilarity<false, usePerfectHashing>(i, j)) {
                     res.push_back(pair<uint16_t, uint16_t>(i, j));
                 }
             }
@@ -485,7 +601,7 @@ private:
         return res;
     };
 
-    template<bool usePivotFilter>
+    template<bool usePivotFilter, bool usePerfectHashing>
     vector<pair<uint16_t, uint16_t>> findSimilarSequencesUsingGroupedApproach() {
         vector<pair<uint16_t, uint16_t>> res;
         const int GROUP_SIZE = 32;
@@ -494,7 +610,7 @@ private:
             for (int gStart = 0; gStart < gEnd; gStart += GROUP_SIZE) {
                 for (int i = 0; i < GROUP_SIZE; i++) {
                     for (int j = i + 1; j < GROUP_SIZE; j++) {
-                        if (testSequencesSimilarity<usePivotFilter>(gStart + i, gStart + j)) {
+                        if (testSequencesSimilarity<usePivotFilter, usePerfectHashing>(gStart + i, gStart + j)) {
                             res.push_back(pair<uint16_t, uint16_t>(gStart + i, gStart + j));
                         }
                     }
@@ -506,7 +622,7 @@ private:
                 for (int g2Start = g1Start + GROUP_SIZE; g2Start < gEnd; g2Start += GROUP_SIZE) {
                     for (int i = 0; i < GROUP_SIZE; i++) {
                         for (int j = 0; j < GROUP_SIZE; j++) {
-                            if (testSequencesSimilarity<usePivotFilter>(g1Start + i, g2Start + j)) {
+                            if (testSequencesSimilarity<usePivotFilter, usePerfectHashing>(g1Start + i, g2Start + j)) {
                                 res.push_back(pair<uint16_t, uint16_t>(g1Start + i, g2Start + j));
                             }
                         }
@@ -518,7 +634,7 @@ private:
             for(int i = 0; i < xParams.d - 1; i++) {
                 int j = i < gEnd?gEnd:i + 1;
                 for (; j < xParams.d; j++) {
-                    if (testSequencesSimilarity<usePivotFilter>(i, j)) {
+                    if (testSequencesSimilarity<usePivotFilter, usePerfectHashing>(i, j)) {
                         res.push_back(pair<uint16_t, uint16_t>(i, j));
                     }
                 }
@@ -545,13 +661,18 @@ public:
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
-        if (xParams.groupedBruteMode)
-            res = xParams.pivotsFilterMode?findSimilarSequencesUsingGroupedApproach<true>()
-                    :findSimilarSequencesUsingGroupedApproach<false>();
-        else if (xParams.pivotsFilterMode)
-            res = findSimilarSequencesUsingControlPivot();
+        if (xParams.groupedBruteMode) {
+            if (xParams.pivotsFilterMode)
+                res = xParams.perfectHashing ? findSimilarSequencesUsingGroupedApproach<true, true>()
+                                               : findSimilarSequencesUsingGroupedApproach<true, false>();
+            else res = xParams.perfectHashing ? findSimilarSequencesUsingGroupedApproach<false, true>()
+                                              : findSimilarSequencesUsingGroupedApproach<false, false>();
+        } else if (xParams.pivotsFilterMode)
+            res = xParams.perfectHashing ? findSimilarSequencesUsingControlPivot<true>():
+                  findSimilarSequencesUsingControlPivot<false>();
         else
-            res = findSimilarSequencesUsingStandardBrute();
+            res = xParams.perfectHashing ? findSimilarSequencesUsingStandardBrute<true>():
+                  findSimilarSequencesUsingStandardBrute<false>();
         postprocessing();
         return res;
     }
@@ -560,21 +681,34 @@ public:
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
-        if (xParams.pivotsFilterMode)
+        if (xParams.pivotsFilterMode) {
+            if (xParams.perfectHashing) {
+                for (pair<uint16_t, uint16_t> pair: pairs) {
+                    if (testSequencesSimilarity<true, true>(pair.first, pair.second))
+                        res.push_back(pair);
+                }
+            } else {
+                for (pair<uint16_t, uint16_t> pair: pairs) {
+                    if (testSequencesSimilarity<true, false>(pair.first, pair.second))
+                        res.push_back(pair);
+                }
+            }
+        } else if (xParams.perfectHashing) {
             for (pair<uint16_t, uint16_t> pair: pairs) {
-                if (testSequencesSimilarity<true>(pair.first, pair.second))
+                if (testSequencesSimilarity<false, true>(pair.first, pair.second))
                     res.push_back(pair);
             }
-        else
+        } else {
             for (pair<uint16_t, uint16_t> pair: pairs) {
-                if (testSequencesSimilarity<false>(pair.first, pair.second))
+                if (testSequencesSimilarity<false, false>(pair.first, pair.second))
                     res.push_back(pair);
             }
+        }
         postprocessing();
         return res;
     }
 
-    template<bool usePivotFilter>
+    template<bool usePivotFilter, bool usePerfectHashing>
     inline bool testSequencesSimilarity(uint16_t i, uint16_t j) {
         if(usePivotFilter) {
             filterResult res = pivotFilter(i, j);
@@ -583,13 +717,22 @@ public:
             else if (res == similar)
                 return true;
         }
-        uint8_t* x = seq1 + (size_t) i * xParams.bytesPerSequence;
-        uint8_t* y = seq2 + (size_t) j * xParams.bytesPerSequence;
+        uint8_t *x = seq1 + (size_t) i * xParams.bytesPerSequence;
+        uint8_t *y = seq2 + (size_t) j * xParams.bytesPerSequence;
+        if (usePerfectHashing) {
+            uint64_t *hx = seqBlockHashes + (size_t) i * hashBlocksCount;
+            uint64_t *hy = seqBlockHashes + (size_t) j * hashBlocksCount;
+            testSequencesSimilarityWithPerfectHash(hx, hy, x, y);
+        }
         return testSequencesSimilarity(x, y);
     };
 
     inline bool testSequencesSimilarity(const void* seq1, const void* seq2) {
         return findSequencesDistance<true>(seq1, seq2) <= xParams.k;
+    }
+
+    inline bool testSequencesSimilarityWithPerfectHash(const uint64_t* seq1hashes, const uint64_t* seq2hashes, const void* seq1, const void* seq2) {
+        return findSequencesDistanceWithPerfectHash<true>(seq1hashes, seq2hashes, seq1, seq2) <= xParams.k;
     }
 
     string getName() {
@@ -598,6 +741,7 @@ public:
             (xParams.pivotsFilterMode?(
                     xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
             (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +
+            (xParams.perfectHashing?PERFECT_HASHING_PREFIX_ID:"") +
             (shortcircuit?"":NO_SHORT_CIRCUIT_PREFIX_ID) + BRUTE_FORCE_ID +
             (binaryAlphabet?BINARY_MODE_ID_SUFFIX:"");
     }

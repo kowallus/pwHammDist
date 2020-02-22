@@ -27,6 +27,7 @@ struct ExperimentParams {
     bool pivotsElectionMode = false;
     bool interleaveBitsMode = false;
     bool lazyInterleaveBitsMode = false;
+    bool perfectHashing = false; // INCOMPLETE
 
     // hashing-filter params
 
@@ -35,6 +36,10 @@ struct ExperimentParams {
     // quantization params
 
     uint8_t quantizationBits = 3;
+
+    // perfect-hashing
+
+    uint16_t hashBlockLengthInULLs = 16;
 
     // extra params
 
