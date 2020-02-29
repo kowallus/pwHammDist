@@ -67,7 +67,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
-                    fprintf(stderr, "[-c] [-i] [-I]");
+                    fprintf(stderr, "[-c] [-i] [-I] ");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
