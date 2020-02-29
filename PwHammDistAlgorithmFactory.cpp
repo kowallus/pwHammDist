@@ -33,8 +33,8 @@ public:
             qxParams.pivotsFilterMode = pivotsFilterMode;
             switch(xParams.bytesPerElement) {
                 case 1: return new QuantizationBasedPwHammDistAlgorithm<uint8_t>(qxParams, new SimpleBinaryQuantizer<uint8_t>(), binaryAlgorithmFactory);
-//                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(qxParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory);
-                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(qxParams, new ThresholdStatsBasedBinaryQuantizer<uint16_t>(xParams.quantizationBits), binaryAlgorithmFactory);
+                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(qxParams, new BitShiftBinaryQuantizer<uint16_t>(), binaryAlgorithmFactory);
+//                case 2: return new QuantizationBasedPwHammDistAlgorithm<uint16_t>(qxParams, new ThresholdStatsBasedBinaryQuantizer<uint16_t>(xParams.quantizationBits), binaryAlgorithmFactory);
                 default:
                     fprintf(stderr, "ERROR: unsupported bytes per element: %d.\n", (int) xParams.bytesPerElement);
                     exit(EXIT_FAILURE);
