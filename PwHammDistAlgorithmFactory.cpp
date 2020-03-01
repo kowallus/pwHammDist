@@ -7,7 +7,11 @@ PwHammDistAlgorithm* getPwHammDistAlgorithmInstance(ExperimentParams xParams) {
         exit(EXIT_FAILURE);
     }
 
-    return typeIt->second->getAlgorithmInstance(xParams);
+    auto res = typeIt->second->getAlgorithmInstance(xParams);
+    if (xParams.shuffleColumnsMode) {
+        res = new PwHammDistAlgorithmWithPreprocessing(xParams, res);
+    }
+    return res;
 }
 
 class QuantizationBasedPwHammDistPreFilterFactory: public PwHammDistAlgorithmFactory {

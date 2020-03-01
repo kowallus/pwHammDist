@@ -3,6 +3,7 @@
 
 #include "QuantizationPwHammDistAlgorithm.h"
 #include "HashingPwHammDistAlgorithm.h"
+#include "PwHammDistAlgorithmWithPreprocessing.h"
 #include "xp-params.h"
 #include <map>
 

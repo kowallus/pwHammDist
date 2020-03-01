@@ -9,7 +9,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
             std::string(xParams.isInBinaryMode()?"":"ciI") +
-            std::string("r:a:pengAvq?");
+            std::string("r:a:pengsAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
@@ -44,6 +44,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'i':
                 xParams.interleaveBitsMode = true;
                 break;
+            case 's':
+                xParams.shuffleColumnsMode = true;
+                break;
             case 'A':
                 xParams.alignSequencesTo256bits = false;
                 break;
@@ -64,7 +67,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] \n"
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] [-s] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
                     fprintf(stderr, "[-c] [-i] [-I] ");

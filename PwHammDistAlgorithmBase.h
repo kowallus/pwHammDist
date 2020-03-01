@@ -765,7 +765,6 @@ public:
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
-        if (xParams.verbose) cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
         auto qRes = preFilterAlgorithm->findSimilarSequences(sequences);
         if (xParams.verbose) cout << "filtered pairs count: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
         vector<pair<uint16_t, uint16_t>> res = postVerificationAlgorithm->findSimilarSequences(sequences, qRes);

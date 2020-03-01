@@ -28,7 +28,7 @@ set(PWHD_FILES
         ${HELPER_FILES} ${BENCH_FILES} ${HASHES_FILES}
         PwHammDistAlgorithmBase.h PwHammDistAlgorithmFactory.cpp PwHammDistAlgorithmFactory.h
         QuantizationPwHammDistAlgorithm.h
-        HashingPwHammDistAlgorithm.h)
+        HashingPwHammDistAlgorithm.h PwHammDistAlgorithmWithPreprocessing.h)
 
 add_executable(bench-binary bench/main-binary.cpp ${PWHD_FILES})
 add_executable(bench-dataset bench/main-dataset.cpp ${PWHD_FILES} )
