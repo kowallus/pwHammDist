@@ -27,6 +27,7 @@ struct ExperimentParams {
     bool pivotsElectionMode = false;
     bool interleaveBitsMode = false;
     bool lazyInterleaveBitsMode = false;
+    bool statsBasedQuantization = true;
     bool shuffleColumnsMode = false;
     bool perfectHashing = false; // INCOMPLETE
 

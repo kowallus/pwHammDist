@@ -8,7 +8,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
     int opt; // current option
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
-            std::string(xParams.isInBinaryMode()?"":"ciI") +
+            std::string(xParams.isInBinaryMode()?"":"ciIQ") +
             std::string("r:a:pengsAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
@@ -44,6 +44,9 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'i':
                 xParams.interleaveBitsMode = true;
                 break;
+            case 'Q':
+                xParams.statsBasedQuantization = false;
+                break;
             case 's':
                 xParams.shuffleColumnsMode = true;
                 break;
@@ -70,7 +73,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] [-s] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
-                    fprintf(stderr, "[-c] [-i] [-I] ");
+                    fprintf(stderr, "[-c] [-i] [-I] [-Q] ");
                 if (xParams.isBitsPerPackedEnabled())
                     fprintf(stderr, "[-b bitsPerPacked] ");
                 if (xParams.isOnesInPromilesEnabled())
@@ -90,6 +93,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 if (!xParams.isInBinaryMode()) {
                     fprintf(stderr, "\n-c compact mode processing");
                     fprintf(stderr, "\n-i interleaved bits mode (or -I with lazy evaluation)");
+                    fprintf(stderr, "\n-Q disable stats based quantization");
                 }
                 fprintf(stderr, "\n\n-A ignore aligning sequences to 256-bit");
                 fprintf(stderr, "\n-v verify results \n-q quiet output (only parameters)\n\n");
