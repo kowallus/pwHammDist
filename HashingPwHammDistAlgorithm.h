@@ -46,7 +46,7 @@ public:
 
     virtual ~HashingBasedPwHammDistAlgorithm() { }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
         preprocessing(sequences);
         vector<vector<uint16_t>> hT(HASH_SLOTS);
         vector<uint32_t> hTKeys;
@@ -84,7 +84,7 @@ public:
         return res;
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         fprintf(stderr, "ERROR: hashing-based filter supported only for all sequences.\n");
         exit(EXIT_FAILURE);

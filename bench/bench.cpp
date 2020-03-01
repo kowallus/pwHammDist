@@ -5,7 +5,7 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
 
 void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
 
-void verifyAlgorithmResult(const uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
+void verifyAlgorithmResult(uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
     if (xParams.algorithmID != BRUTE_FORCE_ID) {
             cout << "Verification... " << endl;
             auto res = algorithm->findSimilarSequences(sequences);

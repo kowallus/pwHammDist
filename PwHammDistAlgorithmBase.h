@@ -28,8 +28,8 @@ protected:
     PwHammDistAlgorithm(ExperimentParams xParams): xParams(xParams) {};
 
 public:
-    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t *sequences) = 0;
-    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t *sequences) = 0;
+    virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
             const vector<pair<uint16_t, uint16_t>> pairs) = 0;
     virtual string getName() = 0;
 };
@@ -74,8 +74,8 @@ private:
     uint32_t hashHitStats = 0;
     uint32_t hashMissStats = 0;
 
-    void preprocessing(const uint8_t *sequences) {
-        origSeq = (uint8_t*) sequences;
+    void preprocessing(uint8_t *sequences) {
+        origSeq = sequences;
         origBytesPerSequence = xParams.bytesPerSequence;
         if (xParams.perfectHashing) {
             perfectHashSequences(sequences);
@@ -85,8 +85,8 @@ private:
         } else if (xParams.interleaveBitsMode) {
             interleaveBits(sequences);
         } else {
-            seq1 = (uint8_t*) sequences;
-            seq2 = (uint8_t*) sequences;
+            seq1 = sequences;
+            seq2 = sequences;
         }
         if (xParams.pivotsFilterMode) {
             if (xParams.verbose) cout << "pivots: ";
@@ -658,7 +658,7 @@ public:
             delete[] seqAugmention;
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
         if (xParams.groupedBruteMode) {
@@ -677,7 +677,7 @@ public:
         return res;
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         preprocessing(sequences);
         vector<pair<uint16_t, uint16_t>> res;
@@ -764,7 +764,7 @@ public:
         delete(preFilterAlgorithm);
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
         if (xParams.verbose) cout << "checkpoint... " << " (" << time_millis() << " msec)" << endl;
         auto qRes = preFilterAlgorithm->findSimilarSequences(sequences);
         if (xParams.verbose) cout << "filtered pairs count: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
@@ -772,7 +772,7 @@ public:
         return res;
     };
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         return postVerificationAlgorithm->findSimilarSequences(sequences, pairs);
     }

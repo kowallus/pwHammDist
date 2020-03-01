@@ -121,7 +121,7 @@ protected:
     static const uint8_t COLUMNS_GROUP = 64;
     static const uint8_t MAX_TESTED_BITS = 8;
     static const uint16_t SKIP_INTERVAL = 16;
-    uint16_t counter[COLUMNS_GROUP * (1 << MAX_TESTED_BITS)];
+    uint16_t* counter;
 
     const uint8_t testedBits;
     const uint16_t sigma;
@@ -132,9 +132,10 @@ protected:
 
     void preprocess(uint8_t *sequences, ExperimentParams &xParams) {
         BinaryQuantizer<uint>::preprocess(sequences, xParams);
+        counter = new uint16_t[(size_t) COLUMNS_GROUP * (1 << MAX_TESTED_BITS)];
         this->initQuantizeRules(xParams);
         for(uint16_t i = 0; i < xParams.m; i += COLUMNS_GROUP) {
-            memset(counter, 0, COLUMNS_GROUP * sigma * sizeof(uint));
+            memset(counter, 0, (size_t) COLUMNS_GROUP * sigma * sizeof(uint));
             int endCol = i + COLUMNS_GROUP < xParams.m?i + COLUMNS_GROUP:xParams.m;
             uint8_t* x = sequences + i * sizeof(uint);
             for(uint16_t j = 0; j < xParams.d; j += SKIP_INTERVAL) {
@@ -148,6 +149,7 @@ protected:
             }
             this->buildQuantizeRules(i, endCol);
         }
+        delete[] counter;
         if (xParams.verbose)
             cout << "column stats... " << " (" << time_millis() << " msec)" << endl;
     }
@@ -331,14 +333,14 @@ public:
             delete(qAlgorithm);
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences) {
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
         preprocessing((uint8_t*) sequences);
         auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences());
         postProcessing();
         return qRes;
     }
 
-    vector<pair<uint16_t, uint16_t>> findSimilarSequences(const uint8_t* sequences,
+    vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
                                                           const vector<pair<uint16_t, uint16_t>> pairs) {
         preprocessing((uint8_t*) sequences);
         auto qRes = qAlgorithm->findSimilarSequences(quantizer->getQSequences(), pairs);
