@@ -58,7 +58,7 @@ public:
         if(xParams.isInBinaryMode()) {
             ExperimentParams bxParams = xParams;
             bxParams.binaryMode = false;
-            bxParams.alphabetSize = UINT8_MAX;
+            bxParams.alphabetSizeUpperBound = UINT8_MAX;
             bxParams.bytesPerElement = 1;
             bxParams.m = bxParams.bytesPerSequence;
             return new HashingBasedPwHammDistAlgorithm<uint8_t>(bxParams);

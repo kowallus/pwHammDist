@@ -63,6 +63,7 @@ private:
 
     // compact (or nibble) and interleaved modes
     uint8_t* seqAugmention = 0;
+    uint8_t* seqMapping = 0;
     uint16_t augSeqPerBitInULLs;
     uint8_t bitsPerElement;
 
@@ -74,9 +75,69 @@ private:
     uint32_t hashHitStats = 0;
     uint32_t hashMissStats = 0;
 
+    void checkAlphabetSizeUpperBound(uint8_t *sequences) {
+        uint alphabetSizeUpperBound = 0;
+        uint8_t* seqPtr = sequences;
+        for(uint16_t i = 0; i < xParams.d; i++) {
+            uint* seq = (uint*) seqPtr;
+            for(uint16_t j = 0; j < xParams.m; j++) {
+                uint value = seq[j];
+                if (alphabetSizeUpperBound < value)
+                    alphabetSizeUpperBound = value;
+            }
+            seqPtr += origBytesPerSequence;
+        }
+        xParams.alphabetSizeUpperBound = ++alphabetSizeUpperBound;
+        if (xParams.verbose) cout << "alphabet size upper bound... " << xParams.alphabetSizeUpperBound << " (" << time_micros() << " usec)" << endl;
+    }
+
+
+    void approximateAlphabetSizeUpperBound(uint8_t *sequences) {
+        uint64_t* seqPtr = (uint64_t*) sequences;
+        uint64_t bitOr64 = 0;
+        for(int i = 0; i < xParams.d * seqInULLs; i++)
+            bitOr64 |= *(seqPtr++);
+        uint alphabetSizeUpperBound = 0;
+        uint* bitOr = (uint*) &bitOr64;
+        for(uint8_t i = 0; i < 8 / sizeof(uint); i++)
+            alphabetSizeUpperBound |= *(bitOr++);
+        xParams.alphabetSizeUpperBound = ++alphabetSizeUpperBound;
+        if (xParams.verbose) cout << "approximated alphabet size upper bound... " << xParams.alphabetSizeUpperBound << " (" << time_micros() << " msec)" << endl;
+    }
+
+    void mapDNAsymbols2values(uint8_t *sequences) {
+        uint alphabetSizeUpperBound = 0;
+        uint8_t* seqPtr = sequences;
+        seqMapping = new uint8_t[xParams.d * xParams.bytesPerSequence];
+        uint8_t* mapPtr = seqMapping;
+        for(uint16_t i = 0; i < xParams.d; i++) {
+            symbols2values32bitsAligned(mapPtr, seqPtr, xParams.bytesPerSequence);
+            seqPtr += origBytesPerSequence;
+            mapPtr += origBytesPerSequence;
+        }
+        mapPtr = seqMapping;
+        for(uint16_t i = 0; i < xParams.d; i++) {
+            for(uint16_t j = 0; j < xParams.bytesPerSequence; j++) {
+                uint value = mapPtr[j];
+                if (alphabetSizeUpperBound < value)
+                    alphabetSizeUpperBound = value;
+            }
+            mapPtr += origBytesPerSequence;
+        }
+        xParams.alphabetSizeUpperBound = ++alphabetSizeUpperBound;
+        if (xParams.verbose) cout << "mapping alphabet (& size upper bound)... " << xParams.alphabetSizeUpperBound << " (" << time_millis() << " msec)" << endl;
+    }
+
     void preprocessing(uint8_t *sequences) {
         origSeq = sequences;
         origBytesPerSequence = xParams.bytesPerSequence;
+        if (compact || xParams.interleaveBitsMode) {
+            if (xParams.dnaDataMode) {
+                mapDNAsymbols2values(sequences);
+                sequences = seqMapping;
+            } else
+                checkAlphabetSizeUpperBound(sequences);
+        }
         if (xParams.perfectHashing) {
             perfectHashSequences(sequences);
         }
@@ -104,6 +165,10 @@ private:
             delete[] seqAugmention;
             seqAugmention = 0;
         }
+        if (seqMapping) {
+            delete[] seqMapping;
+            seqMapping = 0;
+        }
         if (seqBlockHashes) {
             if (xParams.verbose)
                 cout << "perfect-hashing hits vs misses: " << hashHitStats << " / " << hashMissStats << endl;
@@ -128,7 +193,7 @@ private:
         } else {
             if (compact) {
                 if (sizeof(uint) == sizeof(uint8_t)) {
-                    assert(xParams.alphabetSize <= 8);
+                    assert(xParams.alphabetSizeUpperBound <= 8);
                     dist = (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
                                                                                                 (uint64_t *) seq2,
                                                                                                 xParams.bytesPerSequence *
@@ -184,7 +249,7 @@ private:
                 if (sizeof(uint) == sizeof(uint8_t)) {
                     uint8_t* seq1 = (uint8_t*) seq1start + offsetByte / 2;
                     uint8_t* seq2 = (uint8_t*) seq2start + offsetByte / 2;
-                    assert(xParams.alphabetSize <= 8);
+                    assert(xParams.alphabetSizeUpperBound <= 8);
                     dist += (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
                             (uint64_t *) seq2, lengthBytes * 2, xParams.k - dist) :
                            hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
@@ -253,7 +318,7 @@ private:
     }
 
     void compactation(const uint8_t *sequences) {
-        if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSize <= 8) {
+        if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSizeUpperBound <= 8) {
             xParams.bytesPerSequence /= 2;
             const uint32_t nibblePackedBytes = xParams.d * xParams.bytesPerSequence;
             seqAugmention = new uint8_t[nibblePackedBytes * 2];
@@ -407,7 +472,7 @@ private:
     }
 
     void interleaveBits(const uint8_t *sequences) {
-        this->bitsPerElement = 32 - __builtin_clz(xParams.alphabetSize - 1);
+        this->bitsPerElement = 32 - __builtin_clz(xParams.alphabetSizeUpperBound - 1);
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(xParams.m, 64);
         augSeqPerBitInULLs = ceilDivisionBySmallInteger(augSeqPerBitInULLs, 4) * 4;
         if (xParams.lazyInterleaveBitsMode)

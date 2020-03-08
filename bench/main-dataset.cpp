@@ -6,7 +6,7 @@
 
 using namespace std;
 
-void scanDNAdataset(ifstream &src, ExperimentParams &xParams) {
+void scanDNAdataset(ifstream &src, ExperimentParams &xParams, bool mapSymbols2Values) {
     string seq;
     int length;
     bool alphaPresent[UINT8_MAX] = { false };
@@ -17,7 +17,7 @@ void scanDNAdataset(ifstream &src, ExperimentParams &xParams) {
                 break;
             if (!alphaPresent[seq[length]]) {
                 alphaPresent[seq[length]] = true;
-                xParams.alphabetSize++;
+                xParams.alphabetSizeUpperBound++;
             }
         }
         if (xParams.m == 0)
@@ -28,10 +28,15 @@ void scanDNAdataset(ifstream &src, ExperimentParams &xParams) {
         }
     }
 
-    uint8_t value = 0;
-    for(int i = 0; i < UINT8_MAX; i++) {
-        if (alphaPresent[i])
-            xParams.symbol2value[i] = value++;
+    if (mapSymbols2Values) {
+        uint8_t value = 0;
+        for (int i = 0; i < UINT8_MAX; i++) {
+            if (alphaPresent[i])
+                xParams.symbol2value[i] = value++;
+        }
+    } else {
+        for (int i = 0; i < UINT8_MAX; i++)
+            xParams.symbol2value[i] = alphaPresent[i]?i:0;
     }
 }
 
@@ -49,8 +54,8 @@ void scanIntegerDataset(ifstream &src, ExperimentParams &xParams) {
                 exit(EXIT_FAILURE);
             }
             length++;
-            if (xParams.alphabetSize < value + 1)
-                xParams.alphabetSize = value + 1;
+            if (xParams.alphabetSizeUpperBound < value + 1)
+                xParams.alphabetSizeUpperBound = value + 1;
         }
         if (xParams.m == 0)
             xParams.m = length;
@@ -66,7 +71,7 @@ void scanSequences(ifstream &src, ExperimentParams &xParams) {
     src.seekg(0, src.beg);
     xParams.dnaDataMode = isalpha((char) src.peek());
     if (xParams.dnaDataMode) {
-        scanDNAdataset(src, xParams);
+        scanDNAdataset(src, xParams, false);
     } else {
         scanIntegerDataset(src, xParams);
     }
@@ -123,10 +128,10 @@ uint8_t* loadSequences(BenchmarkParams &bParams, ExperimentParams &xParams) {
     if (bParams.verbose) {
         cout << "m = " << xParams.m << "; ";
         cout << "d = " << xParams.d << "; ";
-        cout << "sigma = " << xParams.alphabetSize << endl;
+        cout << "sigma = " << xParams.alphabetSizeUpperBound << endl;
         cout << "Loading data..." << std::endl;
     }
-    xParams.bytesPerElement =  xParams.alphabetSize - 1 <= UINT8_MAX?1:(xParams.alphabetSize - 1 <= UINT16_MAX?2:4);
+    xParams.bytesPerElement =  xParams.alphabetSizeUpperBound - 1 <= UINT8_MAX?1:(xParams.alphabetSizeUpperBound - 1 <= UINT16_MAX?2:4);
     xParams.bytesPerSequence = (int) xParams.m * xParams.bytesPerElement;
     if (xParams.alignSequencesTo256bits)
         xParams.bytesPerSequence = (int) ceilDivisionBySmallInteger(xParams.bytesPerSequence,

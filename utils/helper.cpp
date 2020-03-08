@@ -297,3 +297,65 @@ int strcmplcp(const char* lStrPtr, const char* rStrPtr, int length) {
     return 0;
 
 }
+
+struct LUT
+{
+    char sym2val[256];
+    char val2sym[28];
+
+    LUT() {
+        val2sym[0] = 'A';
+        val2sym[1] = 'C';
+        val2sym[2] = 'G';
+        val2sym[3] = 'T';
+        val2sym[4] = 'N';
+        val2sym[5] = 'U';
+        val2sym[6] = 'Y';
+        val2sym[7] = 'R';
+        val2sym[8] = 'K';
+        val2sym[9] = 'M';
+        val2sym[10] = 'B';
+        val2sym[11] = 'D';
+        val2sym[12] = 'H';
+        val2sym[13] = 'V';
+        val2sym[14] = 'a';
+        val2sym[15] = 'c';
+        val2sym[16] = 'g';
+        val2sym[17] = 't';
+        val2sym[18] = 'n';
+        val2sym[19] = 'u';
+        val2sym[20] = 'y';
+        val2sym[21] = 'r';
+        val2sym[22] = 'k';
+        val2sym[23] = 'm';
+        val2sym[24] = 'b';
+        val2sym[25] = 'd';
+        val2sym[26] = 'h';
+        val2sym[27] = 'v';
+        memset(sym2val, -1, 14);
+        for(char i = 0; i < 14; i++)
+            sym2val[val2sym[i]] = i;
+        sym2val[0] = 0;
+    }
+} instance;
+
+char* sym2val = instance.sym2val;
+char* val2sym = instance.val2sym;
+
+void symbols2values32bitsAligned(uint8_t *valPtr, uint8_t *symPtr, int length) {
+    for(uint16_t i = 0; i < length; i += 4) {
+        valPtr[i] = sym2val[symPtr[i]];
+        valPtr[i + 1] = sym2val[symPtr[i + 1]];
+        valPtr[i + 2] = sym2val[symPtr[i + 2]];
+        valPtr[i + 3] = sym2val[symPtr[i + 3]];
+    }
+}
+
+uint8_t symbol2value(char symbol) {
+    return sym2val[symbol];
+}
+
+char value2symbol(uint8_t value) {
+    return val2sym[value];
+}
+

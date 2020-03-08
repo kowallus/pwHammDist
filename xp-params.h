@@ -57,7 +57,7 @@ struct ExperimentParams {
 
     bool dnaDataMode = false;
     uint8_t symbol2value[UINT8_MAX] = { 0 };
-    uint32_t alphabetSize = 0;
+    uint32_t alphabetSizeUpperBound = 0;
     uint8_t bytesPerElement = 0;
     uint32_t bytesPerSequence = 0;
 
@@ -74,7 +74,7 @@ struct ExperimentParams {
         binaryMode = true;
         compactMode = false;
         interleaveBitsMode = false;
-        alphabetSize = 2;
+        alphabetSizeUpperBound = 2;
         enableOnesInPromiles();
         enableBitsPerPacked();
     }

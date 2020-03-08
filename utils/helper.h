@@ -519,4 +519,11 @@ public:
     }
 };
 
+// bioinformatical routines
+
+void symbols2values32bitsAligned(uint8_t *valPtr, uint8_t *symPtr, int length);
+uint8_t symbol2value(char symbol);
+char value2symbol(uint8_t value);
+
+
 #endif // HELPER_H_INCLUDED

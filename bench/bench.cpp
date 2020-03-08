@@ -117,7 +117,7 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
     double minTime = times[0];
     outStream << microSecToMillis(medianTime, 3) << "\t" << alignRight(algorithm->getName(), 20) <<
               "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
-              "\t" << alignRight(toString(xParams.alphabetSize), 5) << "\t" << alignRight(toString(xParams.k), 5);
+              "\t" << alignRight(toString(xParams.alphabetSizeUpperBound), 5) << "\t" << alignRight(toString(xParams.k), 5);
     if (xParams.isOnesInPromilesEnabled())
         outStream << "\t" << alignRight(toString(xParams.onesInPromiles),7);
     if (xParams.isBitsPerPackedEnabled())
