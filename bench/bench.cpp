@@ -66,7 +66,7 @@ void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, 
 
     resultsToStream(fout, algorithm, bParams, xParams, times, isErrorFound);
     if (bParams.verbose) {
-        cout << endl << "time[ms]\t               algID\t    m\t    d\tsigma\t    k" <<
+        cout << endl << "time[ms]\t                    algID\t    m\t    d\tsigma\t    k" <<
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
             (xParams.isBitsPerPackedEnabled()?"\tbits_packed":"");
         if (bParams.repeats > 1)
@@ -120,7 +120,7 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
     double maxTime = times[bParams.repeats - 1];
     double medianTime = times[times.size()/2];
     double minTime = times[0];
-    outStream << microSecToMillis(medianTime, 3) << "\t" << alignRight(algorithm->getName(), 20) <<
+    outStream << microSecToMillis(medianTime, 3) << "\t" << alignRight(algorithm->getName(), 25) <<
               "\t" << alignRight(toString(xParams.m), 5) << "\t" << alignRight(toString(xParams.d), 5) <<
               "\t" << alignRight(toString(xParams.alphabetSizeUpperBound), 5) << "\t" << alignRight(toString(xParams.k), 5);
     if (xParams.isOnesInPromilesEnabled())
