@@ -31,6 +31,20 @@ struct ExperimentParams {
     bool shuffleColumnsMode = false;
     bool perfectHashing = false; // INCOMPLETE
 
+    void setModelAlgorithm() {
+        algorithmID = "bf";
+        shortCircuitMode = true;
+        compactMode = false;
+        groupedBruteMode = false;
+        pivotsFilterMode = false;
+        pivotsElectionMode = false;
+        interleaveBitsMode = false;
+        lazyInterleaveBitsMode = false;
+        statsBasedQuantization = true;
+        shuffleColumnsMode = false;
+        perfectHashing = false;
+    }
+
     // hashing-filter params
 
     uint16_t hbf_L = 11;
@@ -86,6 +100,8 @@ struct ExperimentParams {
     void disableFiltration() {
         pivotsFilterMode = false;
     }
+
+
 };
 
 #endif //PWHD_XP_PARAMS_H

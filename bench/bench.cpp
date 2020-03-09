@@ -1,37 +1,41 @@
 #include "bench.h"
 
 void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,
-                     const vector<double> &times);
+                     const vector<double> &times, bool isErrorFound);
 
-void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times);
+void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,
+        vector<double> &times, bool isErrorFound);
 
-void verifyAlgorithmResult(uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
-    if (xParams.algorithmID != BRUTE_FORCE_ID) {
-            cout << "Verification... " << endl;
-            auto res = algorithm->findSimilarSequences(sequences);
-            xParams.algorithmID == BRUTE_FORCE_ID;
-            PwHammDistAlgorithm *const modelAlgorithm = getPwHammDistAlgorithmInstance(xParams);
-            auto modelRes = modelAlgorithm->findSimilarSequences(sequences);
-            delete(modelAlgorithm);
-            sort(res.begin(), res.end());
-            sort(modelRes.begin(), modelRes.end());
-            if (res == modelRes) {
-                cout << "OK!" << endl;
-            } else {
-                cout << "ERROR!" << endl;
-                for(size_t i = 0; i < res.size(); i++) {
-                    if (res[i] != modelRes[i]) {
-                        if (res[i] < modelRes[i]) {
-                            cout << "An example of false positive: " << res[i].first << " and " << res[i].second << endl;
-                        } else {
-                            cout << "An example of false negative: " << modelRes[i].first << " and " << modelRes[i].second << endl;
-                        }
+bool isAlgorithmResultValid(uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
+    if (xParams.verbose) cout << "Verification... " << endl;
+    auto res = algorithm->findSimilarSequences(sequences);
+    ExperimentParams mxParams = xParams;
+    mxParams.setModelAlgorithm();
+    PwHammDistAlgorithm *const modelAlgorithm = getPwHammDistAlgorithmInstance(mxParams);
+    auto modelRes = modelAlgorithm->findSimilarSequences(sequences);
+    delete(modelAlgorithm);
+    sort(res.begin(), res.end());
+    sort(modelRes.begin(), modelRes.end());
+    bool verifyRes = res == modelRes;
+    if (xParams.verbose) {
+        if (verifyRes) {
+            cout << "OK!" << endl;
+        } else {
+            cout << "ERROR!" << endl;
+            for (size_t i = 0; i < res.size(); i++) {
+                if (res[i] != modelRes[i]) {
+                    if (res[i] < modelRes[i]) {
+                        cout << "An example of false positive: " << res[i].first << " and " << res[i].second << endl;
+                    } else {
+                        cout << "An example of false negative: " << modelRes[i].first << " and " << modelRes[i].second
+                             << endl;
                     }
+                    break;
                 }
             }
-        } else {
-            cout << "Model algorithm cannot be verified ";
         }
+    }
+    return verifyRes;
 }
 
 void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkParams &bParams, ExperimentParams &xParams) {
@@ -46,20 +50,21 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
         brute += algorithm->findSimilarSequences(sequences).size();
         times.push_back(time_micros());
     }
-    logResults(algorithm, bParams, xParams, times);
-
-    if (bParams.verbose) cout << std::endl << "pairs count (average per repeat): " << (brute / bParams.repeats) << std::endl;
+    bool errorFound = false;
     if (bParams.verification) {
-        verifyAlgorithmResult(sequences, algorithm, xParams);
+        errorFound = !isAlgorithmResultValid(sequences, algorithm, xParams);
     }
+    logResults(algorithm, bParams, xParams, times, errorFound);
+    if (bParams.verbose) cout << std::endl << "pairs count (average per repeat): " << (brute / bParams.repeats) << std::endl;
     if (bParams.verbose) cout << "The end..." << std::endl;
 }
 
-void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams, vector<double> &times) {
+void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,
+        vector<double> &times, bool isErrorFound) {
     sort(times.begin(), times.end());
     ofstream fout(BENCH_LOG_FILENAME, ios_base::out | ios_base::binary | ios_base::app);
 
-    resultsToStream(fout, algorithm, bParams, xParams, times);
+    resultsToStream(fout, algorithm, bParams, xParams, times, isErrorFound);
     if (bParams.verbose) {
         cout << endl << "time[ms]\t               algID\t    m\t    d\tsigma\t    k" <<
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
@@ -68,7 +73,7 @@ void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, 
             cout << "\trepeats\tmax/min time [us]";
         cout <<  endl;
     }
-    resultsToStream(cout, algorithm, bParams, xParams, times);
+    resultsToStream(cout, algorithm, bParams, xParams, times, isErrorFound);
 }
 
 string microSecToMillis(double medianTime, uint8_t minDigits2show) {
@@ -111,7 +116,7 @@ string microSecToMillis(double medianTime, uint8_t minDigits2show) {
 }
 
 void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams,
-                     const ExperimentParams &xParams, const vector<double> &times) {
+                     const ExperimentParams &xParams, const vector<double> &times, bool isErrorFound) {
     double maxTime = times[bParams.repeats - 1];
     double medianTime = times[times.size()/2];
     double minTime = times[0];
@@ -124,6 +129,8 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
         outStream << "\t" << alignRight(toString(xParams.bitsPerPacked), 11);
     if (bParams.repeats > 1)
         outStream << "\t" << alignRight(toString(bParams.repeats), 7) << "\t" << maxTime << "\t" << minTime << "\t";
+    if (isErrorFound)
+        outStream << "ERROR";
     outStream << endl;
 }
 
