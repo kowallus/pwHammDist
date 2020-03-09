@@ -55,7 +55,7 @@ private:
     uint8_t* seq2 = 0;
 
     // pivot mode params
-    static const uint8_t PIVOTS_COUNT_MAX = 6;
+    static const uint8_t PIVOTS_COUNT_MAX = 8;
     uint8_t pivotsCount = PIVOTS_COUNT_MAX;
     uint16_t pivots[PIVOTS_COUNT_MAX];
     uint16_t* pivotDist = 0;

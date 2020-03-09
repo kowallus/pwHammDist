@@ -47,7 +47,7 @@ struct ExperimentParams {
 
     // hashing-filter params
 
-    uint16_t hbf_L = 11;
+    uint16_t hbf_L = 10;
 
     // quantization params
 
