@@ -629,10 +629,7 @@ private:
                 iDist[p] = pivotDist[p * xParams.d + i];
             while (rj < xParams.d && iDist[ctrlPivot] + ctrlPivotDist[pivotRank[rj]] <= xParams.k) {
                 const int j = pivotRank[rj++];
-                if (i < j)
-                    res.push_back(pair<uint16_t, uint16_t>(i, j));
-                else
-                    res.push_back(pair<uint16_t, uint16_t>(j, i));
+                res.push_back((i < j)?pair<uint16_t, uint16_t>(i, j):pair<uint16_t, uint16_t>(j, i));
             }
             while (rj < xParams.d && ctrlPivotDist[pivotRank[rj]] - iDist[ctrlPivot] <= xParams.k) {
                 const int j = pivotRank[rj];
@@ -650,10 +647,7 @@ private:
                     }
                 }
                 if (filterRes == similar || (filterRes == inconclusive && testSequencesSimilarity<false, usePerfectHashing>(i, j))) {
-                    if (i < j)
-                        res.push_back(pair<uint16_t, uint16_t>(i, j));
-                    else
-                        res.push_back(pair<uint16_t, uint16_t>(j, i));
+                        res.push_back((i < j)?pair<uint16_t, uint16_t>(i, j):pair<uint16_t, uint16_t>(j, i));
                 }
                 rj++;
             }
