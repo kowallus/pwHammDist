@@ -24,7 +24,7 @@ struct ExperimentParams {
     bool compactMode = false;
     bool groupedBruteMode = false;
     bool pivotsFilterMode = false;
-    bool pivotsElectionMode = false;
+    bool pivotsRandomization = false;
     bool interleaveBitsMode = false;
     bool lazyInterleaveBitsMode = false;
     bool statsBasedQuantization = true;
@@ -37,7 +37,7 @@ struct ExperimentParams {
         compactMode = false;
         groupedBruteMode = false;
         pivotsFilterMode = false;
-        pivotsElectionMode = false;
+        pivotsRandomization = false;
         interleaveBitsMode = false;
         lazyInterleaveBitsMode = false;
         statsBasedQuantization = true;

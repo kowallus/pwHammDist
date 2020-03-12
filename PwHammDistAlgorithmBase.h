@@ -17,7 +17,7 @@ const string COMPACT_PREFIX_ID = "c";
 const string INTERLEAVE_BITS_PREFIX_ID = "i";
 const string LAZY_INTERLEAVE_BITS_PREFIX_ID = "I";
 const string PIVOT_FILTER_PREFIX_ID = "p";
-const string ELECTION_PIVOT_FILTER_PREFIX_ID = "P";
+const string RANDOMIZED_PIVOT_FILTER_PREFIX_ID = "P";
 const string PERFECT_HASHING_PREFIX_ID = "H";
 const string BINARY_MODE_ID_SUFFIX = "_bin";
 
@@ -151,10 +151,10 @@ private:
         }
         if (xParams.pivotsFilterMode) {
             if (xParams.verbose) cout << "pivots: ";
-            if (xParams.pivotsElectionMode)
-                calculateDistancesToPivotsWithStats();
+            if (xParams.pivotsRandomization)
+                calculateDistancesToPivots<true>();
             else
-                calculateDistancesToRandomPivots();
+                calculateDistancesToPivots<false>();
             if (xParams.verbose) cout << "..." << " (" << time_millis() << " msec)" << endl;
         }
     }
@@ -492,9 +492,16 @@ private:
         if (xParams.verbose) cout << "interleaved bits... " << " (" << time_millis() << " msec)" << endl;
     }
 
-    void calculateDistancesToRandomPivots() {
-        randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
-        uint16_t candidate = randgenerator() % xParams.d;
+    template<bool randomMode>
+    void calculateDistancesToPivots() {
+        uint16_t candidateInterval = xParams.d / pivotsCount;
+        uint16_t candidate;
+        if (randomMode) {
+            randgenerator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+            candidate = randgenerator() % xParams.d;
+        } else {
+            candidate = candidateInterval / 2;
+        }
         uint16_t maxUp2HalfKCount = 0;
         pivotDist = new uint16_t[xParams.d * PIVOTS_COUNT_MAX];
         uint16_t* ptr = pivotDist;
@@ -519,15 +526,19 @@ private:
                 pivotsCount = p;
                 break;
             }
-            bool lackOfCandidate = true;
-            while (lackOfCandidate) {
-                candidate = randgenerator() % xParams.d;
-                lackOfCandidate = false;
-                for (int p2 = 0; p2 <= p; p2++)
-                    if (pivots[p2] == candidate) {
-                        lackOfCandidate = true;
-                        break;
-                    }
+            if (randomMode) {
+                bool lackOfCandidate = true;
+                while (lackOfCandidate) {
+                    candidate = randgenerator() % xParams.d;
+                    lackOfCandidate = false;
+                    for (int p2 = 0; p2 <= p; p2++)
+                        if (pivots[p2] == candidate) {
+                            lackOfCandidate = true;
+                            break;
+                        }
+                }
+            } else {
+                candidate += candidateInterval;
             }
             ptr += xParams.d;
         }
@@ -807,7 +818,7 @@ public:
         return (compact?COMPACT_PREFIX_ID:"") + (xParams.interleaveBitsMode?(
                     xParams.lazyInterleaveBitsMode?LAZY_INTERLEAVE_BITS_PREFIX_ID:INTERLEAVE_BITS_PREFIX_ID):"") +
             (xParams.pivotsFilterMode?(
-                    xParams.pivotsElectionMode?ELECTION_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
+                    xParams.pivotsRandomization?RANDOMIZED_PIVOT_FILTER_PREFIX_ID:PIVOT_FILTER_PREFIX_ID):"") +
             (xParams.groupedBruteMode?GROUPED_PREFIX_ID:"") +
             (xParams.perfectHashing?PERFECT_HASHING_PREFIX_ID:"") +
             (shortcircuit?"":NO_SHORT_CIRCUIT_PREFIX_ID) + BRUTE_FORCE_ID +

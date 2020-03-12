@@ -9,7 +9,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
 
     std::string paramsStr = std::string(xParams.isBitsPerPackedEnabled()?"b:":"") +
             std::string(xParams.isInBinaryMode()?"":"ciIQ") +
-            std::string("r:a:pengsAvq?");
+            std::string("r:a:pRngsAvq?");
 
     while ((opt = getopt(argc, argv, paramsStr.c_str())) != -1) {
         switch (opt) {
@@ -27,8 +27,8 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
             case 'n':
                 xParams.shortCircuitMode = false;
                 break;
-            case 'e':
-                xParams.pivotsElectionMode = true;
+            case 'R':
+                xParams.pivotsRandomization = true;
                 break;
             case 'p':
                 xParams.pivotsFilterMode = true;
@@ -70,7 +70,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 break;
             case '?':
             default: /* '?' */
-                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-e] [-g] [-s] \n"
+                fprintf(stderr, "Usage: %s [-a algorithmID] [-n] [-p] [-R] [-g] [-s] \n"
                                 "\t\t[-r noOfRepeats] [-v] [-q] [-A] ", argv[0]);
                 if (!xParams.isInBinaryMode())
                     fprintf(stderr, "[-c] [-i] [-I] [-Q] ");
@@ -87,7 +87,7 @@ void parseArgs(int argc, char *argv[], BenchmarkParams &bParams, ExperimentParam
                 for(pair<string, PwHammDistAlgorithmFactory*> p: pwHammDistAlgorithmTypesMap) {
                     fprintf(stderr, "%s : %s\n", p.first.c_str(), p.second->getAlgorithmName().c_str());
                 }
-                fprintf(stderr, "\n-p pivot filter mode (add -e for pivot election)"
+                fprintf(stderr, "\n-p pivot filter mode (add -R for pivot randomization)"
                                 "\n-n disable short-circuit"
                                 "\n-g sequences matched in groups (for bf algorithm)");
                 if (!xParams.isInBinaryMode()) {
