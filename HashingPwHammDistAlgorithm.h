@@ -19,6 +19,7 @@ private:
     int hInBytes;
 
     void preprocessing(const uint8_t *sequences) {
+        xParams.resetStats();
         htSize = xParams.d * HASH_SLOTS;
         h = xParams.m / (xParams.k + xParams.hbf_L);
         if (!h) {
@@ -52,6 +53,7 @@ public:
         vector<uint32_t> hTKeys;
         vector<uint16_t> pairsCounter(xParams.d * xParams.d, 0);
         vector<pair<uint16_t, uint16_t>> res;
+        xParams.preStageTimeInUsec = time_micros();
         if (xParams.verbose)
             cout << "hT initialization... " << " (" << time_millis() << " msec)" << endl;
         for(int i = 0; i < xParams.m; i += h) {

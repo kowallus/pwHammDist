@@ -19,6 +19,8 @@ struct ExperimentParams {
     uint16_t d = 0; // no of sequences
     uint16_t k = 0; // max hamming length
 
+    uint32_t totalPairsCount() { return (uint32_t) d * (d - 1) / 2; }
+
     std::string algorithmID = "bf";
     bool shortCircuitMode = true;
     bool compactMode = false;
@@ -43,6 +45,51 @@ struct ExperimentParams {
         statsBasedQuantization = true;
         shuffleColumnsMode = false;
         perfectHashing = false;
+    }
+
+    // experiment stats
+
+    uint32_t pairsFound = 0; //no of similar pairs found
+    uint32_t pairsVerified = 0; //no of pairs processed with sequences access
+    uint32_t pairsFilterRejected = 0; //no of pairs individually rejected by filter (without sequences accessed)
+    uint32_t pairsFilterAccepted = 0; //no of pairs accepted by filter (without sequences accessed)
+    uint32_t pairsIgnored = 0; //no of pairs rejected without any access
+
+    uint32_t preStageTimeInUsec = 0; //time of preprocessing (together with preFilter algorithm)
+
+    inline void resetStats() {
+#ifdef XP_STATS
+        pairsFound = 0;
+        pairsVerified = 0;
+        pairsFilterRejected = 0;
+        pairsFilterAccepted = 0;
+        pairsIgnored = 0;
+        preStageTimeInUsec = 0;
+#endif
+    }
+
+    inline void statsIncPairsVerification() {
+#ifdef XP_STATS
+        pairsVerified++;
+#endif
+    }
+
+    inline void statsIncPairsFilterAccepted(int acceptedCount = 1) {
+#ifdef XP_STATS
+        pairsFilterAccepted += acceptedCount;
+#endif
+    }
+
+    inline void statsIncPairsFilterRejected(int rejectedCount = 1) {
+#ifdef XP_STATS
+        pairsFilterRejected += rejectedCount;
+#endif
+    }
+
+    inline void statsIncPairsIgnored(int ignoredCount = 1) {
+#ifdef XP_STATS
+        pairsIgnored += ignoredCount;
+#endif
     }
 
     // hashing-filter params

@@ -120,7 +120,7 @@ uint8_t* loadSequences(BenchmarkParams &bParams, ExperimentParams &xParams) {
     const char* srcFile = xParams.datasetFileName.c_str();
     ifstream src(srcFile, ios_base::in | ios_base::binary);
     if (src.fail()) {
-        fprintf(stderr, "cannot open reads file %s\n", srcFile);
+        fprintf(stderr, "cannot open sequences file %s\n", srcFile);
         exit(EXIT_FAILURE);
     }
     if (bParams.verbose) cout << "Scanning dataset " << xParams.datasetFileName << " ..." << endl;

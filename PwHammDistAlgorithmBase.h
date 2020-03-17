@@ -32,6 +32,17 @@ public:
     virtual vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences,
             const vector<pair<uint16_t, uint16_t>> pairs) = 0;
     virtual string getName() = 0;
+
+    inline void cummulateStats(ExperimentParams &dParams) {
+#ifdef XP_STATS
+        dParams.pairsFound += xParams.pairsFound;
+        dParams.pairsVerified += xParams.pairsVerified;
+        dParams.pairsIgnored += xParams.pairsIgnored;
+        dParams.pairsFilterAccepted += xParams.pairsFilterAccepted;
+        dParams.pairsFilterRejected += xParams.pairsFilterRejected;
+        dParams.preStageTimeInUsec = xParams.preStageTimeInUsec;
+#endif
+    }
 };
 
 class PwHammDistAlgorithmFactory {
@@ -129,6 +140,7 @@ private:
     }
 
     void preprocessing(uint8_t *sequences) {
+        xParams.resetStats();
         origSeq = sequences;
         origBytesPerSequence = xParams.bytesPerSequence;
         if (compact || xParams.interleaveBitsMode) {
@@ -155,8 +167,9 @@ private:
                 calculateDistancesToPivots<true>();
             else
                 calculateDistancesToPivots<false>();
-            if (xParams.verbose) cout << "..." << " (" << time_millis() << " msec)" << endl;
+            if (xParams.verbose) cout << "preprocessing..." << " (" << time_millis() << " msec)" << endl;
         }
+        xParams.preStageTimeInUsec = time_micros();
     }
 
     void postprocessing() {
@@ -613,10 +626,14 @@ private:
         for(int p = 0; p < pivotsCount; p++) {
             const int iDist = pivotDist[p * xParams.d + i];
             const int jDist = pivotDist[p * xParams.d + j];
-            if (abs(iDist - jDist) > xParams.k)
+            if (abs(iDist - jDist) > xParams.k) {
+                xParams.statsIncPairsFilterRejected();
                 return different;
-            if (iDist + jDist <= xParams.k)
+            }
+            if (iDist + jDist <= xParams.k) {
+                xParams.statsIncPairsFilterAccepted();
                 return similar;
+            }
             
         }
         return inconclusive;
@@ -642,6 +659,7 @@ private:
                 const int j = pivotRank[rj++];
                 res.push_back((i < j)?pair<uint16_t, uint16_t>(i, j):pair<uint16_t, uint16_t>(j, i));
             }
+            xParams.statsIncPairsFilterAccepted(rj - ri - 1);
             while (rj < xParams.d && ctrlPivotDist[pivotRank[rj]] - iDist[ctrlPivot] <= xParams.k) {
                 const int j = pivotRank[rj];
                 filterResult filterRes = inconclusive;
@@ -650,18 +668,27 @@ private:
                         continue;
                     const int jDist = pivotDist[p * xParams.d + j];
                     if (abs(iDist[p] - jDist) > xParams.k) {
+                        xParams.statsIncPairsFilterRejected();
                         filterRes = different;
                         break;
                     } if (iDist[p] + jDist <= xParams.k) {
+                        xParams.statsIncPairsFilterAccepted();
                         filterRes = similar;
                         break;
                     }
                 }
-                if (filterRes == similar || (filterRes == inconclusive && testSequencesSimilarity<false, usePerfectHashing>(i, j))) {
-                        res.push_back((i < j)?pair<uint16_t, uint16_t>(i, j):pair<uint16_t, uint16_t>(j, i));
+                if (filterRes == similar ||
+                    (filterRes == inconclusive && testSequencesSimilarity<false, usePerfectHashing>(i, j))) {
+                    res.push_back((i < j)?pair<uint16_t, uint16_t>(i, j):pair<uint16_t, uint16_t>(j, i));
                 }
                 rj++;
             }
+#ifdef XP_STATS
+            if (rj < xParams.d) {
+                xParams.statsIncPairsIgnored(xParams.d - rj - 1);
+                xParams.statsIncPairsFilterRejected();
+            }
+#endif
         }
         return res;
     };
@@ -796,12 +823,13 @@ public:
             else if (res == similar)
                 return true;
         }
+        xParams.statsIncPairsVerification();
         uint8_t *x = seq1 + (size_t) i * xParams.bytesPerSequence;
         uint8_t *y = seq2 + (size_t) j * xParams.bytesPerSequence;
         if (usePerfectHashing) {
             uint64_t *hx = seqBlockHashes + (size_t) i * hashBlocksCount;
             uint64_t *hy = seqBlockHashes + (size_t) j * hashBlocksCount;
-            testSequencesSimilarityWithPerfectHash(hx, hy, x, y);
+            return testSequencesSimilarityWithPerfectHash(hx, hy, x, y);
         }
         return testSequencesSimilarity(x, y);
     };
@@ -844,9 +872,18 @@ public:
     }
 
     vector<pair<uint16_t, uint16_t>> findSimilarSequences(uint8_t* sequences) {
+        xParams.resetStats();
         auto qRes = preFilterAlgorithm->findSimilarSequences(sequences);
+        preFilterAlgorithm->cummulateStats(xParams);
+#ifdef XP_STATS
+        xParams.pairsFilterRejected = xParams.totalPairsCount() - qRes.size() - xParams.pairsIgnored;
+        xParams.pairsFound = 0;
+        xParams.pairsFilterAccepted = 0;
+        xParams.pairsVerified = 0;
+#endif
         if (xParams.verbose) cout << "filtered pairs count: " << qRes.size() << " (" << time_millis() << " msec)" << endl;
         vector<pair<uint16_t, uint16_t>> res = postVerificationAlgorithm->findSimilarSequences(sequences, qRes);
+        postVerificationAlgorithm->cummulateStats(xParams);
         return res;
     };
 

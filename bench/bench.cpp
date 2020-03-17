@@ -43,19 +43,28 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
     if (bParams.verbose) cout << "Solving... " << endl;
 
     vector<double> times;
-    int brute = 0;
+    uint64_t cummPairsMatched = 0;
+    uint64_t cummPreStageTimeInUsec = 0;
     for(int i = 0; i < bParams.repeats; i++) {
         cleanCache();
+        xParams.resetStats();
         time_checkpoint();
-        brute += algorithm->findSimilarSequences(sequences).size();
+        xParams.pairsFound = algorithm->findSimilarSequences(sequences).size();
         times.push_back(time_micros());
+        cummPairsMatched += xParams.pairsFound;
+#ifdef XP_STATS
+        algorithm->cummulateStats(xParams);
+        cummPreStageTimeInUsec += xParams.preStageTimeInUsec;
+#endif
     }
     bool errorFound = false;
     if (bParams.verification) {
         errorFound = !isAlgorithmResultValid(sequences, algorithm, xParams);
     }
+    xParams.pairsFound = (cummPairsMatched / bParams.repeats);
+    xParams.preStageTimeInUsec = (cummPreStageTimeInUsec / bParams.repeats);
     logResults(algorithm, bParams, xParams, times, errorFound);
-    if (bParams.verbose) cout << std::endl << "pairs count (average per repeat): " << (brute / bParams.repeats) << std::endl;
+    if (bParams.verbose) cout << std::endl << "pairs count (average per repeat): " << xParams.pairsFound << std::endl;
     if (bParams.verbose) cout << "The end..." << std::endl;
 }
 
@@ -69,6 +78,10 @@ void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, 
         cout << endl << "time[ms]\t                    algID\t    m\t    d\tsigma\t    k" <<
             (xParams.isOnesInPromilesEnabled()?"\tones[%]":"") <<
             (xParams.isBitsPerPackedEnabled()?"\tbits_packed":"");
+#ifdef XP_STATS
+        cout << "  matched pairs\t verified pairs\tfilter accepted\tfilter rejected\t  ignored pairs"
+                "\t  pre-time [us]";
+#endif
         if (bParams.repeats > 1)
             cout << "\trepeats\tmax/min time [us]";
         cout <<  endl;
@@ -127,10 +140,17 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
         outStream << "\t" << alignRight(toString(xParams.onesInPromiles),7);
     if (xParams.isBitsPerPackedEnabled())
         outStream << "\t" << alignRight(toString(xParams.bitsPerPacked), 11);
+#ifdef XP_STATS
+    outStream << "\t" << alignRight(toString(xParams.pairsFound), 15)
+        << "\t" << alignRight(toString(xParams.pairsVerified), 15)
+        << "\t" << alignRight(toString(xParams.pairsFilterAccepted), 15)
+        << "\t" << alignRight(toString(xParams.pairsFilterRejected), 15)
+        << "\t" << alignRight(toString(xParams.pairsIgnored), 15)
+        << "\t" << alignRight(toString(xParams.preStageTimeInUsec), 15);
+#endif
     if (bParams.repeats > 1)
-        outStream << "\t" << alignRight(toString(bParams.repeats), 7) << "\t" << maxTime << "\t" << minTime << "\t";
+        outStream << "\t" << alignRight(toString(bParams.repeats), 7) << "\t" << (int) maxTime << "\t" << (int) minTime << "\t";
     if (isErrorFound)
         outStream << "ERROR";
     outStream << endl;
 }
-

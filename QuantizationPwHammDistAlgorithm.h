@@ -308,6 +308,7 @@ private:
     PwHammDistAlgorithm* qAlgorithm = 0;
 
     void preprocessing(uint8_t *sequences) {
+        xParams.resetStats();
         quantizer->quantize(sequences, xParams);
         if (xParams.verbose) cout << "quantized... " << " (" << time_millis() << " msec)" << endl;
         if (qAlgorithm) {
@@ -318,6 +319,7 @@ private:
     };
 
     void postProcessing() {
+        qAlgorithm->cummulateStats(xParams);
         quantizer->cleanup();
     }
 
