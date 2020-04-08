@@ -6,6 +6,8 @@ void resultsToStream(ostream &outStream, PwHammDistAlgorithm* algorithm, const B
 void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,
         vector<double> &times, bool isErrorFound);
 
+bool isTestDisrupted(vector<double> times, const BenchmarkParams &bParams);
+
 bool isAlgorithmResultValid(uint8_t *sequences, PwHammDistAlgorithm *algorithm, ExperimentParams &xParams) {
     if (xParams.verbose) cout << "Verification... " << endl;
     auto res = algorithm->findSimilarSequences(sequences);
@@ -43,20 +45,28 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
     if (bParams.verbose) cout << "Solving... " << endl;
 
     vector<double> times;
-    uint64_t cummPairsMatched = 0;
-    uint64_t cummPreStageTimeInUsec = 0;
-    for(int i = 0; i < bParams.repeats; i++) {
-        cleanCache();
-        xParams.resetStats();
-        time_checkpoint();
-        xParams.pairsFound = algorithm->findSimilarSequences(sequences).size();
-        times.push_back(time_micros());
-        cummPairsMatched += xParams.pairsFound;
+    uint64_t cummPairsMatched = 0, cummPreStageTimeInUsec;
+    bool testAccepted = true;
+    do {
+        times.clear();
+        cummPairsMatched = 0;
+        cummPreStageTimeInUsec = 0;
+        for (int i = 0; i < bParams.repeats; i++) {
+            cleanCache();
+            xParams.resetStats();
+            time_checkpoint();
+            xParams.pairsFound = algorithm->findSimilarSequences(sequences).size();
+            times.push_back(time_micros());
+            cummPairsMatched += xParams.pairsFound;
 #ifdef XP_STATS
-        algorithm->cummulateStats(xParams);
-        cummPreStageTimeInUsec += xParams.preStageTimeInUsec;
+            algorithm->cummulateStats(xParams);
+            cummPreStageTimeInUsec += xParams.preStageTimeInUsec;
 #endif
-    }
+        }
+        if (bParams.avoidTestDistruption)
+            testAccepted = !isTestDisrupted(times, bParams);
+        if (bParams.verbose and !testAccepted) cout << "d";
+    } while (testAccepted);
     bool errorFound = false;
     if (bParams.verification) {
         errorFound = !isAlgorithmResultValid(sequences, algorithm, xParams);
@@ -66,6 +76,14 @@ void benchmark(uint8_t* sequences, PwHammDistAlgorithm* algorithm, BenchmarkPara
     logResults(algorithm, bParams, xParams, times, errorFound);
     if (bParams.verbose) cout << std::endl << "pairs count (average per repeat): " << xParams.pairsFound << std::endl;
     if (bParams.verbose) cout << "The end..." << std::endl;
+}
+
+bool isTestDisrupted(vector<double> times, const BenchmarkParams &bParams) {
+    sort(times.begin(), times.end());
+    double maxTime = times[bParams.repeats - 1];
+    double medianTime = times[times.size()/2];
+    double minTime = times[0];
+    return minTime * bParams.max2minGuard >= maxTime || minTime * bParams.med2minGuard >= medianTime;
 }
 
 void logResults(PwHammDistAlgorithm* algorithm, const BenchmarkParams &bParams, const ExperimentParams &xParams,

@@ -7,6 +7,10 @@ struct BenchmarkParams {
     bool verification = false;
     int repeats = 1;
 
+    bool avoidTestDistruption = true;
+    double med2minGuard = 1.030;
+    double max2minGuard = 1.150;
+
 };
 
 #endif //PWHD_BENCH_PARAMS_H
