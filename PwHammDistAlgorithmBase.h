@@ -207,18 +207,18 @@ private:
             if (compact) {
                 if (sizeof(uint) == sizeof(uint8_t)) {
                     assert(xParams.alphabetSizeUpperBound <= 8);
-                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceNibble((uint64_t *) seq1,
                                                                                                 (uint64_t *) seq2,
                                                                                                 xParams.bytesPerSequence *
                                                                                                 2, xParams.k) :
-                           hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
+                           hammingDistanceNibble((uint64_t *) seq1, (uint64_t *) seq2,
                                                           xParams.bytesPerSequence * 2);
                 } else if (sizeof(uint) == sizeof(uint16_t)) {
-                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceAugmented16bit((uint64_t *) seq1,
+                    dist = (allowShortCircuit && shortcircuit) ? hammingDistanceCompacted16bit((uint64_t *) seq1,
                                                                                                (uint64_t *) seq2,
                                                                                                xParams.bytesPerSequence /
                                                                                                2, xParams.k) :
-                           hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
+                           hammingDistanceCompacted16bit((uint64_t *) seq1, (uint64_t *) seq2,
                                                          xParams.bytesPerSequence / 2);
                 }
             } else {
@@ -270,10 +270,12 @@ private:
                 } else if (sizeof(uint) == sizeof(uint16_t)) {
                     uint8_t* seq1 = (uint8_t*) seq1start + offsetByte;
                     uint8_t* seq2 = (uint8_t*) seq2start + offsetByte;
-                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceAugmented16bit((uint64_t *) seq1,
-                            (uint64_t *) seq2, lengthBytes / 2, xParams.k - dist) :
-                           hammingDistanceAugmented16bit((uint64_t *) seq1, (uint64_t *) seq2,
-                                                         lengthBytes / 2);
+                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceCompacted16bit((uint64_t *) seq1,
+                                                                                                (uint64_t *) seq2,
+                                                                                                lengthBytes / 2,
+                                                                                                xParams.k - dist) :
+                            hammingDistanceCompacted16bit((uint64_t *) seq1, (uint64_t *) seq2,
+                                                          lengthBytes / 2);
                 }
             } else {
                 if (xParams.interleaveBitsMode) {
@@ -334,28 +336,17 @@ private:
         if (sizeof(uint) == sizeof(uint8_t) && xParams.alphabetSizeUpperBound <= 8) {
             xParams.bytesPerSequence /= 2;
             const uint32_t nibblePackedBytes = xParams.d * xParams.bytesPerSequence;
-            seqAugmention = new uint8_t[nibblePackedBytes * 2];
+            seqAugmention = new uint8_t[nibblePackedBytes];
             uint8_t* x = (uint8_t*) sequences;
             uint8_t *y = seqAugmention;
-            uint8_t *z = seqAugmention + nibblePackedBytes;
-            for(int i = 0; i < nibblePackedBytes; i++, x += 2) {
-                *y = *x + *(x + 1) * 16;
-                *(z++) = *(y++) + 128 + 8;
-            }
+            for(int i = 0; i < nibblePackedBytes; i++, x += 2)
+                *(y++) = *x + *(x + 1) * 16;
             seq1 = seqAugmention;
-            seq2 = seqAugmention + xParams.d * xParams.bytesPerSequence;
+            seq2 = seqAugmention;
             if (xParams.verbose) cout << "nibbled... " << " (" << time_millis() << " msec)" << endl;
         } else if (sizeof(uint) == sizeof(uint16_t)) {
-            seqAugmention = new uint8_t[xParams.d * xParams.bytesPerSequence];
-            uint16_t* x = (uint16_t*) sequences;
-            uint16_t* z = (uint16_t*) seqAugmention;
-            const uint32_t length = xParams.d * xParams.bytesPerSequence / 2;
-            for(int i = 0; i < length; i++) {
-                *(z++) = *(x++) + 32768;
-            }
             seq1 = (uint8_t*) sequences;
-            seq2 = seqAugmention;
-            if (xParams.verbose) cout << "augmented... " << " (" << time_millis() << " msec)" << endl;
+            seq2 = (uint8_t*) sequences;
         } else {
             fprintf(stderr, "ERROR: unsupported alphabet size for compacting.\n");
             exit(EXIT_FAILURE);

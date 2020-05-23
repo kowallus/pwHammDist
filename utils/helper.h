@@ -214,16 +214,16 @@ inline uint64_t hammingDistanceSimpleShortcircuit(const uint* x, const uint* y, 
 }
 
 inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length) {
-    int res = length;
+    int res = 0;
     for (int i = 0; i < length / 16; i++)
-        res -= __builtin_popcountll( (((~(x[i] ^ y[i])) & 0x7777777777777777) + 0x1111111111111111) & 0x8888888888888888 );
+        res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7777777777777777) & 0x8888888888888888);
     return res;
 }
 
 inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length, int limit) {
     int res = 0;
     for(int i = 0; i < length / 16; i++) {
-        res += 16 - __builtin_popcountll((((~(x[i] ^ y[i])) & 0x7777777777777777) + 0x1111111111111111) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7777777777777777) & 0x8888888888888888);
         if (res > limit)
             return res;
     }
@@ -279,24 +279,24 @@ inline uint64_t hammingDistanceAugmented8bit(const uint64_t *x, const uint64_t *
 }
 
 
-inline uint64_t hammingDistanceAugmented16bit(const uint64_t *x, const uint64_t *augY, int length) {
-    int res = length;
+inline uint64_t hammingDistanceCompacted16bit(const uint64_t *x, const uint64_t *y, int length) {
+    int res = 0;
     for (int i = 0; i < length / 4; i += 4) {
-        res -= __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 1] ^ augY[i + 1]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 2] ^ augY[i + 2]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 3] ^ augY[i + 3]))) + 0x0001000100010001) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 1] ^ y[i + 1]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 2] ^ y[i + 2]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 3] ^ y[i + 3]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
     }
     return res;
 }
 
-inline uint64_t hammingDistanceAugmented16bit(const uint64_t *x, const uint64_t *augY, int length, int limit) {
+inline uint64_t hammingDistanceCompacted16bit(const uint64_t *x, const uint64_t *y, int length, int limit) {
     int res = 0;
     for(int i = 0; i < length / 4; i += 4) {
-        res += 16 - __builtin_popcountll((((~(x[i] ^ augY[i]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 1] ^ augY[i + 1]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 2] ^ augY[i + 2]))) + 0x0001000100010001) & 0x8000800080008000);
-        res -= __builtin_popcountll((((~(x[i + 3] ^ augY[i + 3]))) + 0x0001000100010001) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 1] ^ y[i + 1]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 2] ^ y[i + 2]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
+        res += __builtin_popcountll(((x[i + 3] ^ y[i + 3]) + 0x7FFF7FFF7FFF7FFF) & 0x8000800080008000);
         if (res > limit)
             return res;
     }

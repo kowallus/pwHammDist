@@ -104,7 +104,7 @@ protected:
             for(int shift = 0; shift < end; ++shift)
                 *tmp = ((*tmp) << 1) + ((*srcPtr64++) & 0x0001000100010001);
         } else {
-            fprintf(stderr, "ERROR: unsupported bytes per element (%d) by simple quantization.\n", sizeof(uint));
+            fprintf(stderr, "ERROR: unsupported bytes per element (%ld) by simple quantization.\n", sizeof(uint));
             exit(EXIT_FAILURE);
         }
     }
