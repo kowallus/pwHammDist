@@ -263,9 +263,9 @@ private:
                     uint8_t* seq1 = (uint8_t*) seq1start + offsetByte / 2;
                     uint8_t* seq2 = (uint8_t*) seq2start + offsetByte / 2;
                     assert(xParams.alphabetSizeUpperBound <= 8);
-                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceAugmentedNibble((uint64_t *) seq1,
+                    dist += (allowShortCircuit && shortcircuit) ? hammingDistanceNibble((uint64_t *) seq1,
                             (uint64_t *) seq2, lengthBytes * 2, xParams.k - dist) :
-                           hammingDistanceAugmentedNibble((uint64_t *) seq1, (uint64_t *) seq2,
+                           hammingDistanceNibble((uint64_t *) seq1, (uint64_t *) seq2,
                                                           lengthBytes * 2);
                 } else if (sizeof(uint) == sizeof(uint16_t)) {
                     uint8_t* seq1 = (uint8_t*) seq1start + offsetByte;

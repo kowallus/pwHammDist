@@ -215,15 +215,22 @@ inline uint64_t hammingDistanceSimpleShortcircuit(const uint* x, const uint* y, 
 
 inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length) {
     int res = 0;
-    for (int i = 0; i < length / 16; i++)
+    for (int i = 0; i < length / 16; i += 4) {
         res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 1] ^ y[i + 1]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 2] ^ y[i + 2]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 3] ^ y[i + 3]) + 0x7777777777777777) & 0x8888888888888888);
+    }
     return res;
 }
 
 inline uint64_t hammingDistanceNibble(const uint64_t *x, const uint64_t *y, int length, int limit) {
     int res = 0;
-    for(int i = 0; i < length / 16; i++) {
+    for(int i = 0; i < length / 16; i += 4) {
         res += __builtin_popcountll(((x[i] ^ y[i]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 1] ^ y[i + 1]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 2] ^ y[i + 2]) + 0x7777777777777777) & 0x8888888888888888);
+        res += __builtin_popcountll(((x[i + 3] ^ y[i + 3]) + 0x7777777777777777) & 0x8888888888888888);
         if (res > limit)
             return res;
     }
