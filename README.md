@@ -1,7 +1,7 @@
-# pwHammDist - pairwise hamming distance algorihms
+# pwHammDist - pairwise Hamming distance algorihms
  
 The repository contains a set of practical algorithms for finding pairs of similar sequences in a collection (the similarity measure is the Hamming distance).
-The software works with sequences represented in unsigned 16-bit integers or as a set of basic DNA symbols. Benchmarks include also generation of synthetic binary data.
+The software works with sequences represented in unsigned 16-bit integers or as a set of basic DNA symbols. Benchmarks include also generation and matching synthetic binary data.
 
 ### Installation on Linux
 
@@ -43,7 +43,7 @@ qpbf : quantization-based filter with pivots and brute-force
 
 ```
 
-naive brute-force algorithm benchmark (median out 9 executions) over Campylobacter jejuni dataset with hamming (distance limit set to 16):
+naive brute-force algorithm benchmark (median out 9 executions) over Campylobacter jejuni dataset (distance limit set to 16):
 ```
 ./bench-dataset -a bf -n -r 9 campylobacter.unique.csv 16
 ```
@@ -51,7 +51,7 @@ benchmark using interleaved bits data representation, pivot filter with grouped 
 ```
 ./bench-dataset -a bf -i -p -g SalmonellaTyphy_SNP.unique.txt 89
 ```
-benchmark using brute-force algorithm and naive quantization (according to the lowest bit) filter with control pivot strategy over Campylobacter jejuni dataset with hamming (distance limit set to 8):
+benchmark using brute-force algorithm and naive quantization (according to the lowest bit) filter with control pivot strategy over Campylobacter jejuni dataset (distance limit set to 8):
 ```
 ./bench-dataset -a qpbf -Q -r 9 campylobacter.unique.csv 8
 ```
@@ -82,7 +82,7 @@ To disable binary mode apply: -b 0
 
 ```
 
-benchmark using hash-based filter approach for generated random binary data with following params: density of set bits = 900 (per 1000); sequences length m = 512; sequences count d = 16384; hamming distance limit k = 28
+benchmark using hash-based filter approach for generated random binary data with following params: density of set bits = 900 (per 1000); sequences length m = 512; sequences count d = 16384; Hamming distance limit k = 28
 ```
 ./bench-binary -a hbf 900 512 16384 28
 ```
