@@ -64,6 +64,9 @@ over Campylobacter jejuni dataset (distance limit set to 8):
 ./bench-dataset -a qpbf -Q -r 9 campylobacter.unique.csv 8
 ```
 
+#### Example datasets
+
+The real datasets are freely available at [Zenodo](https://zenodo.org/record/3945108) (thanks to Alexandre P. Francisco). 
 
 ### Benchmarks on synthetic binary data - basic usage 
 
